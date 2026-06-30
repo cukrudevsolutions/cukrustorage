@@ -73,8 +73,8 @@ function format_phone(string $digits): string
 /** Papar nama jenama dengan akhiran "Storage" diwarnakan biru (padan logo), jika ada. */
 function brand_name_html(string $name): string
 {
-    if (preg_match('/^(.*)(Storage)$/i', $name, $m)) {
-        return e($m[1]) . '<span class="brand-accent">' . e($m[2]) . '</span>';
+    if (preg_match('/^(.*?)(\s*)(Storage)$/i', $name, $m)) {
+        return e(rtrim($m[1])) . '<span class="brand-accent">' . e($m[3]) . '</span>';
     }
     return e($name);
 }
