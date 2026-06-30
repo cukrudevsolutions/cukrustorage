@@ -60,3 +60,21 @@ function old(string $field, string $default = ''): string
 {
     return e($_SESSION['_old'][$field] ?? $default);
 }
+
+/** Format no. telefon disimpan (digit sahaja) kepada paparan 01X-XXXXXXX yang konsisten. */
+function format_phone(string $digits): string
+{
+    if (!preg_match('/^01\d{8,9}$/', $digits)) {
+        return $digits;
+    }
+    return substr($digits, 0, 3) . '-' . substr($digits, 3);
+}
+
+/** Papar nama jenama dengan akhiran "Storage" diwarnakan biru (padan logo), jika ada. */
+function brand_name_html(string $name): string
+{
+    if (preg_match('/^(.*)(Storage)$/i', $name, $m)) {
+        return e($m[1]) . '<span class="brand-accent">' . e($m[2]) . '</span>';
+    }
+    return e($name);
+}

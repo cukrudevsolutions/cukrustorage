@@ -92,6 +92,41 @@ final class BookingRepository
         return $stmt->fetchAll();
     }
 
+    /** Reset PIN owner kepada nombor 4-digit rawak. Pulangkan PIN plain sekali sahaja untuk admin maklumkan kepada pelanggan. */
+    public static function resetPin(int $id, string $adminUsername): string
+    {
+        $booking = self::findById($id);
+        if (!$booking) {
+            throw new \RuntimeException('Booking not found');
+        }
+
+        $pin = (string) random_int(1000, 9999);
+        $stmt = Database::pdo()->prepare('UPDATE bookings SET pin_hash = ? WHERE id = ?');
+        $stmt->execute([password_hash($pin, PASSWORD_DEFAULT), $id]);
+
+        self::logStatus($id, $booking['status'], $booking['status'], $adminUsername, 'Owner PIN reset by admin');
+
+        return $pin;
+    }
+
+    /**
+     * Kemaskini sehingga 3 gambar barang di lokasi storan (data URI base64, atau null untuk slot kosong/dibuang).
+     */
+    public static function updatePhotos(int $id, ?string $foto1, ?string $foto2, ?string $foto3, string $adminUsername): void
+    {
+        $booking = self::findById($id);
+        if (!$booking) {
+            throw new \RuntimeException('Booking not found');
+        }
+
+        $stmt = Database::pdo()->prepare(
+            'UPDATE bookings SET foto_storan_1 = ?, foto_storan_2 = ?, foto_storan_3 = ? WHERE id = ?'
+        );
+        $stmt->execute([$foto1, $foto2, $foto3, $id]);
+
+        self::logStatus($id, $booking['status'], $booking['status'], $adminUsername, 'Storage photos updated');
+    }
+
     public static function approve(int $id, float $hargaStorage, ?float $hargaPickup, float $hargaTotal, string $qrToken, string $adminUsername): void
     {
         $pdo = Database::pdo();
@@ -99,7 +134,7 @@ final class BookingRepository
         try {
             $current = self::findById($id);
             if (!$current) {
-                throw new \RuntimeException('Booking tidak ditemui');
+                throw new \RuntimeException('Booking not found');
             }
 
             $stmt = $pdo->prepare(
@@ -115,7 +150,7 @@ final class BookingRepository
                 'id' => $id,
             ]);
 
-            self::logStatus($id, $current['status'], 'approved', $adminUsername, 'Diluluskan dengan harga ' . rm($hargaTotal));
+            self::logStatus($id, $current['status'], 'approved', $adminUsername, 'Approved with price ' . rm($hargaTotal));
 
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -131,7 +166,7 @@ final class BookingRepository
         try {
             $current = self::findById($id);
             if (!$current) {
-                throw new \RuntimeException('Booking tidak ditemui');
+                throw new \RuntimeException('Booking not found');
             }
 
             $extra = '';
@@ -230,7 +265,7 @@ final class BookingRepository
         $rows = $stmt->fetchAll();
 
         foreach ($rows as $row) {
-            self::updateStatus((int) $row['id'], 'overdue', 'system (auto)', 'Auto-tukar overdue selepas tamat return window');
+            self::updateStatus((int) $row['id'], 'overdue', 'system (auto)', 'Automatically changed to overdue after the return period ended');
         }
 
         return count($rows);

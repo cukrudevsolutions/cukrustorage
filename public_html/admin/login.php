@@ -27,27 +27,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $siteName = Settings::get('site_name', 'CukruStorage');
 ?>
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin Log Masuk - <?= e($siteName) ?></title>
+<title>Admin Log In - <?= e($siteName) ?></title>
+<link rel="icon" type="image/png" href="../assets/images/favicon.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-<div class="container" style="max-width:420px;padding-top:60px;">
-    <h1 style="text-align:center;">Admin <?= e($siteName) ?></h1>
-    <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
-    <form method="post" class="card">
-        <?= Csrf::field() ?>
-        <label class="required" for="username">Username</label>
-        <input type="text" id="username" name="username" required autofocus>
+<div class="auth-screen">
+    <div class="auth-box">
+        <img src="../assets/images/favicon.png" alt="" style="width:56px;height:56px;border-radius:var(--radius-md);display:block;margin:0 auto var(--space-4);">
+        <h1 style="text-align:center;">Admin <?= brand_name_html($siteName) ?></h1>
+        <p class="muted" style="text-align:center;margin-bottom:var(--space-5);">Log in to manage bookings & system settings.</p>
+        <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
+        <form method="post" class="card">
+            <?= Csrf::field() ?>
+            <label class="required" for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus autocomplete="username">
 
-        <label class="required" for="password">Kata Laluan</label>
-        <input type="password" id="password" name="password" required>
+            <label class="required" for="password">Password</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
 
-        <button type="submit" class="btn btn-block" style="margin-top:18px;">Log Masuk</button>
-    </form>
+            <button type="submit" class="btn btn-block" style="margin-top:var(--space-5);">Log In</button>
+        </form>
+    </div>
 </div>
 </body>
 </html>

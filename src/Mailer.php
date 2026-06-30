@@ -12,13 +12,11 @@ final class Mailer
      */
     public static function send(string $to, string $subject, string $htmlBody): bool
     {
-        $from = $_ENV['MAIL_FROM'] ?? 'noreply@example.com';
-        $fromName = $_ENV['MAIL_FROM_NAME'] ?? 'CukruStorage';
-
+        $siteName = Settings::get('site_name', 'CukruStorage');
         $headers = [
             'MIME-Version: 1.0',
             'Content-Type: text/html; charset=UTF-8',
-            sprintf('From: %s <%s>', $fromName, $from),
+            sprintf('From: %s <noreply@%s>', $siteName, parse_url(APP_URL, PHP_URL_HOST) ?: 'localhost'),
         ];
 
         return @mail($to, $subject, $htmlBody, implode("\r\n", $headers));

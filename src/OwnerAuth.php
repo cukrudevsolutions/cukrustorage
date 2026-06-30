@@ -90,7 +90,7 @@ final class OwnerAuth
         $phone = Validation::normalizePhone($rawPhone);
 
         if ($locked = self::isLocked($phone)) {
-            return ['success' => false, 'message' => "Terlalu banyak percubaan gagal. Sila cuba lagi dalam {$locked} minit."];
+            return ['success' => false, 'message' => "Too many failed attempts. Please try again in {$locked} minute(s)."];
         }
 
         $bookings = BookingRepository::findAllByPhone($phone);
@@ -104,7 +104,7 @@ final class OwnerAuth
 
         if (empty($matched)) {
             self::registerFailure($phone);
-            return ['success' => false, 'message' => 'No. telefon atau PIN tidak sah.'];
+            return ['success' => false, 'message' => 'Invalid phone number or PIN.'];
         }
 
         self::clearThrottle($phone);
@@ -112,6 +112,6 @@ final class OwnerAuth
         $_SESSION['owner_booking_ids'] = $matched;
         $_SESSION['owner_phone'] = $phone;
 
-        return ['success' => true, 'message' => 'Berjaya log masuk.'];
+        return ['success' => true, 'message' => 'Login successful.'];
     }
 }

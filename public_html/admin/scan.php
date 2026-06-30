@@ -9,14 +9,14 @@ use Cukru\Validation;
 
 AdminAuth::requireLogin();
 
-// Hasil scan QR (token diserahkan dari JS selepas kamera berjaya baca kod)
+// QR scan result (token handed off from JS after the camera successfully reads the code)
 $qrToken = trim((string) ($_GET['token'] ?? ''));
 if ($qrToken !== '') {
     $booking = BookingRepository::findByQrToken($qrToken);
     if ($booking) {
         redirect('admin/booking-detail.php?id=' . (int) $booking['id']);
     }
-    flash_set('error', 'QR code tidak dikenali / booking tidak ditemui.');
+    flash_set('error', 'QR code not recognised / booking not found.');
     redirect('admin/scan.php');
 }
 
@@ -48,53 +48,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $statusLabels = [
-    'pending_approval' => 'Menunggu Kelulusan',
-    'approved' => 'Diluluskan',
-    'in_storage' => 'Dalam Simpanan',
-    'ready_for_return' => 'Sedia Diambil',
-    'returned' => 'Telah Dipulangkan',
+    'pending_approval' => 'Pending Approval',
+    'approved' => 'Approved',
+    'in_storage' => 'In Storage',
+    'ready_for_return' => 'Ready for Return',
+    'returned' => 'Returned',
     'overdue' => 'Overdue',
 ];
 
-$pageTitle = 'Scan / Cari Booking';
+$pageTitle = 'Scan / Find Booking';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<h1>Scan QR / Cari Booking Manual</h1>
+<h1>Scan QR / Find Booking Manually</h1>
+<p class="muted">Find a customer's booking to view details or update its status.</p>
 
 <div class="card">
-    <h3>Imbas QR Code</h3>
-    <p class="muted">Benarkan akses kamera, kemudian halakan ke QR code pada slip pelanggan.</p>
-    <div id="qr-reader" style="max-width:380px;"></div>
-    <div id="qr-status" class="muted" style="margin-top:8px;"></div>
+    <h3><i class="fa-solid fa-camera"></i> Scan QR Code</h3>
+    <p class="muted">Allow camera access, then point it at the QR code on the customer's slip.</p>
+    <div id="qr-reader" style="max-width:380px;border-radius:var(--radius-md);overflow:hidden;"></div>
+    <div id="qr-status" class="muted" style="margin-top:var(--space-2);"></div>
 </div>
 
 <div class="card">
-    <h3>Cari Manual</h3>
-    <p class="muted">Jika QR rosak/hilang, cari guna No. Booking, No. Telefon, atau Nama.</p>
-    <form method="post">
+    <h3><i class="fa-solid fa-magnifying-glass"></i> Manual Search</h3>
+    <p class="muted">If the QR code is damaged/missing, search using the Booking No., Phone Number, or Name.</p>
+    <form method="post" style="display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:flex-end;">
         <?= Csrf::field() ?>
-        <input type="text" name="query" placeholder="Contoh: CKS-20260702-AB3F / 0123456789 / nama" required>
-        <button type="submit" class="btn" style="margin-top:10px;">Cari</button>
+        <div style="flex:1 1 240px;">
+            <input type="text" name="query" placeholder="Example: CKS-20260702-AB3F / 012-3456789 / name" required>
+        </div>
+        <button type="submit" class="btn">Search</button>
     </form>
 
     <?php if ($searched && empty($matches)): ?>
-        <p class="alert alert-error" style="margin-top:14px;">Tiada rekod ditemui.</p>
+        <div class="empty-state">
+            <div class="icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <p>No records found.</p>
+        </div>
     <?php elseif (!empty($matches)): ?>
-        <table style="margin-top:14px;">
-            <thead><tr><th>No. Booking</th><th>Nama</th><th>Telefon</th><th>Status</th><th></th></tr></thead>
+        <div class="table-responsive" style="margin-top:var(--space-4);">
+        <table>
+            <thead><tr><th>Booking No.</th><th>Name</th><th>Phone</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($matches as $b): ?>
                 <tr>
                     <td><?= e($b['booking_ref']) ?></td>
                     <td><?= e($b['nama']) ?></td>
-                    <td><?= e($b['no_telefon']) ?></td>
+                    <td><?= e(format_phone($b['no_telefon'])) ?></td>
                     <td><span class="badge badge-<?= e($b['status']) ?>"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span></td>
-                    <td><a class="btn btn-sm" href="booking-detail.php?id=<?= (int) $b['id'] ?>">Lihat</a></td>
+                    <td><a class="btn btn-sm" href="booking-detail.php?id=<?= (int) $b['id'] ?>">View</a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 </div>
 
@@ -103,7 +111,7 @@ require __DIR__ . '/partials/header.php';
 (function () {
     const statusEl = document.getElementById('qr-status');
     if (typeof Html5Qrcode === 'undefined') {
-        statusEl.textContent = 'Pengimbas QR gagal dimuatkan (perlukan sambungan internet). Sila guna carian manual.';
+        statusEl.textContent = 'QR scanner failed to load (requires an internet connection). Please use manual search instead.';
         return;
     }
     const scanner = new Html5Qrcode('qr-reader');
@@ -115,14 +123,14 @@ require __DIR__ . '/partials/header.php';
         (decodedText) => {
             if (handled) return;
             handled = true;
-            statusEl.textContent = 'QR dikesan, mencari booking...';
+            statusEl.textContent = 'QR code detected, looking up booking...';
             scanner.stop().finally(() => {
                 window.location.href = 'scan.php?token=' + encodeURIComponent(decodedText);
             });
         },
-        () => { /* abaikan ralat scan berterusan semasa cari fokus */ }
+        () => { /* ignore continuous scan errors while searching for focus */ }
     ).catch((err) => {
-        statusEl.textContent = 'Tidak dapat akses kamera (' + err + '). Sila guna carian manual di bawah.';
+        statusEl.textContent = 'Unable to access camera (' + err + '). Please use manual search below.';
     });
 })();
 </script>

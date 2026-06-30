@@ -7,6 +7,8 @@ use Cukru\Csrf;
 use Cukru\BookingRepository;
 use Cukru\RateCard;
 use Cukru\Settings;
+use Cukru\SlipMailer;
+use Cukru\PhotoUpload;
 
 AdminAuth::requireLogin();
 
@@ -15,14 +17,14 @@ $booking = $id > 0 ? BookingRepository::findById($id) : null;
 
 if (!$booking) {
     http_response_code(404);
-    flash_set('error', 'Booking tidak ditemui.');
+    flash_set('error', 'Booking not found.');
     redirect('admin/bookings.php');
 }
 
 $updatableStatuses = [
-    'in_storage' => 'Dalam Simpanan (IN_STORAGE)',
-    'ready_for_return' => 'Sedia untuk Diambil (READY_FOR_RETURN)',
-    'returned' => 'Telah Dipulangkan (RETURNED)',
+    'in_storage' => 'In Storage (IN_STORAGE)',
+    'ready_for_return' => 'Ready for Return (READY_FOR_RETURN)',
+    'returned' => 'Returned (RETURNED)',
     'overdue' => 'Overdue',
 ];
 
@@ -36,11 +38,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hargaTotal = $hargaStorage + ($hargaPickup ?? 0);
 
         if ($hargaStorage < 0 || ($hargaPickup !== null && $hargaPickup < 0)) {
-            flash_set('error', 'Harga tidak sah.');
+            flash_set('error', 'Invalid price.');
         } else {
             $qrToken = BookingRepository::generateQrToken();
             BookingRepository::approve($id, $hargaStorage, $hargaPickup, $hargaTotal, $qrToken, AdminAuth::username());
-            flash_set('success', 'Booking diluluskan. Slip & QR code kini sedia.');
+
+            $approved = BookingRepository::findById($id);
+            $emailSent = SlipMailer::sendPriceConfirmation($approved);
+
+            flash_set('success', 'Booking approved. The slip & QR code are ready for printing, but will only be sent to the customer once their items are confirmed in storage.'
+                . ($emailSent ? ' A price confirmation email has been sent to the customer.' : ' (Email failed to send - please check the mail server configuration.)'));
+        }
+        redirect('admin/booking-detail.php?id=' . $id);
+    }
+
+    if ($action === 'resend_email' && $booking['qr_token']) {
+        $isInStorageOrLater = $booking['status'] !== 'approved';
+        $emailSent = $isInStorageOrLater ? SlipMailer::sendStorageSlip($booking) : SlipMailer::sendPriceConfirmation($booking);
+        flash_set($emailSent ? 'success' : 'error', $emailSent ? 'Email resent successfully.' : 'Failed to send email. Please check the mail server configuration.');
+        redirect('admin/booking-detail.php?id=' . $id);
+    }
+
+    if ($action === 'reset_pin') {
+        $newPin = BookingRepository::resetPin($id, AdminAuth::username());
+        flash_set('success', "Owner's PIN has been reset to: {$newPin}. Please inform the customer immediately (this PIN is only shown once).");
+        redirect('admin/booking-detail.php?id=' . $id);
+    }
+
+    if ($action === 'update_photos') {
+        $slots = [1 => $booking['foto_storan_1'], 2 => $booking['foto_storan_2'], 3 => $booking['foto_storan_3']];
+        $error = null;
+
+        foreach ($slots as $n => $current) {
+            if (isset($_POST["remove_foto_{$n}"])) {
+                $slots[$n] = null;
+                continue;
+            }
+            $file = $_FILES["foto_{$n}"] ?? null;
+            if ($file && $file['error'] !== UPLOAD_ERR_NO_FILE) {
+                try {
+                    $slots[$n] = PhotoUpload::processUploadedFile($file);
+                } catch (\RuntimeException $e) {
+                    $error = "Photo {$n}: " . $e->getMessage();
+                    break;
+                }
+            }
+        }
+
+        if ($error) {
+            flash_set('error', $error);
+        } else {
+            BookingRepository::updatePhotos($id, $slots[1], $slots[2], $slots[3], AdminAuth::username());
+            flash_set('success', 'Storage photos updated successfully.');
         }
         redirect('admin/booking-detail.php?id=' . $id);
     }
@@ -50,10 +99,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notes = trim($_POST['notes'] ?? '') ?: null;
 
         if (!array_key_exists($newStatus, $updatableStatuses)) {
-            flash_set('error', 'Status tidak sah.');
+            flash_set('error', 'Invalid status.');
         } else {
+            $isFirstTimeInStorage = $booking['status'] === 'approved' && $newStatus === 'in_storage';
             BookingRepository::updateStatus($id, $newStatus, AdminAuth::username(), $notes);
-            flash_set('success', 'Status booking dikemaskini.');
+
+            $successMsg = 'Booking status updated.';
+            if ($isFirstTimeInStorage) {
+                $updated = BookingRepository::findById($id);
+                $emailSent = SlipMailer::sendStorageSlip($updated);
+                $successMsg .= $emailSent ? ' Storage confirmation slip emailed to the customer.' : ' (Slip email failed to send - please check the mail server configuration.)';
+            }
+            flash_set('success', $successMsg);
         }
         redirect('admin/booking-detail.php?id=' . $id);
     }
@@ -66,127 +123,179 @@ $referenceDate = $booking['returned_at'] ? new DateTimeImmutable($booking['retur
 $overdue = RateCard::calculateOverdue($returnWindowEnd, $referenceDate);
 
 $statusLabels = [
-    'pending_approval' => 'Menunggu Kelulusan',
-    'approved' => 'Diluluskan',
-    'in_storage' => 'Dalam Simpanan',
-    'ready_for_return' => 'Sedia untuk Diambil',
-    'returned' => 'Telah Dipulangkan',
-    'overdue' => 'Tertunggak (Overdue)',
+    'pending_approval' => 'Pending Approval',
+    'approved' => 'Approved',
+    'in_storage' => 'In Storage',
+    'ready_for_return' => 'Ready for Return',
+    'returned' => 'Returned',
+    'overdue' => 'Overdue',
 ];
 
-$pageTitle = 'Butiran Booking ' . $booking['booking_ref'];
+$pageTitle = 'Booking Details ' . $booking['booking_ref'];
 require __DIR__ . '/partials/header.php';
 ?>
 
-<p><a href="bookings.php">&larr; Kembali ke Senarai Booking</a></p>
+<p><a href="bookings.php">&larr; Back to Booking List</a></p>
 
-<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-2);">
     <div>
-        <h1 style="margin-bottom:4px;">Booking #<?= e($booking['booking_ref']) ?></h1>
+        <h1 style="margin-bottom:var(--space-2);">Booking #<?= e($booking['booking_ref']) ?></h1>
         <span class="badge badge-<?= e($booking['status']) ?>"><?= e($statusLabels[$booking['status']] ?? $booking['status']) ?></span>
     </div>
     <?php if ($booking['qr_token']): ?>
-        <a class="btn btn-secondary" href="../slip.php?ref=<?= urlencode($booking['booking_ref']) ?>" target="_blank">Lihat / Cetak Slip</a>
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+            <a class="btn btn-secondary btn-sm" href="../slip.php?ref=<?= urlencode($booking['booking_ref']) ?>" target="_blank"><i class="fa-solid fa-receipt"></i> View / Print Slip</a>
+            <form method="post" style="display:inline;">
+                <?= Csrf::field() ?>
+                <input type="hidden" name="action" value="resend_email">
+                <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-envelope"></i> Resend Email</button>
+            </form>
+        </div>
+        <?php if ($booking['status'] === 'approved'): ?>
+            <p class="field-hint" style="width:100%;margin-top:var(--space-2);">The slip/QR is ready for printing (e.g. to label the box), but the customer will only be emailed their confirmation slip once you mark this booking as <strong>In Storage</strong>.</p>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
-<div class="grid-2" style="margin-top:16px;">
+<div class="grid-2">
     <div class="card">
-        <h3>Maklumat Pelanggan</h3>
-        <div class="kv"><span class="k">Nama</span><span class="v"><?= e($booking['nama']) ?></span></div>
-        <div class="kv"><span class="k">No. Telefon</span><span class="v"><?= e($booking['no_telefon']) ?></span></div>
-        <div class="kv"><span class="k">Emel</span><span class="v"><?= e($booking['email']) ?></span></div>
+        <h3>Customer Details</h3>
+        <div class="kv"><span class="k">Name</span><span class="v"><?= e($booking['nama']) ?></span></div>
+        <div class="kv"><span class="k">Phone Number</span><span class="v"><?= e(format_phone($booking['no_telefon'])) ?></span></div>
+        <div class="kv"><span class="k">Email</span><span class="v"><?= e($booking['email']) ?></span></div>
+        <form method="post" style="margin-top:var(--space-4);" onsubmit="return confirm('Reset this customer\'s PIN to a new random PIN? The old PIN will immediately become invalid.')">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="action" value="reset_pin">
+            <button type="submit" class="btn btn-sm btn-secondary btn-block"><i class="fa-solid fa-key"></i> Reset Customer PIN</button>
+        </form>
     </div>
     <div class="card">
-        <h3>Maklumat Simpanan</h3>
-        <div class="kv"><span class="k">Bilangan Kotak</span><span class="v"><?= (int) $booking['bilangan_kotak'] ?></span></div>
-        <div class="kv"><span class="k">Jenis Servis</span><span class="v"><?= $booking['jenis_servis'] === 'pickup' ? 'Pickup oleh Team' : 'Drop-off Sendiri' ?></span></div>
+        <h3>Storage Details</h3>
+        <div class="kv"><span class="k">Number of Boxes</span><span class="v"><?= (int) $booking['bilangan_kotak'] ?></span></div>
+        <div class="kv"><span class="k">Service Type</span><span class="v"><?= $booking['jenis_servis'] === 'pickup' ? 'Team Pickup' : 'Self Drop-off' ?></span></div>
         <?php if ($booking['jenis_servis'] === 'pickup'): ?>
-            <div class="kv"><span class="k">Alamat</span><span class="v"><?= nl2br(e($booking['alamat_pickup'])) ?></span></div>
-            <div class="kv"><span class="k">Jarak Anggaran</span><span class="v"><?= e($booking['jarak_anggaran'] ?? '-') ?></span></div>
+            <div class="kv"><span class="k">Address</span><span class="v"><?= nl2br(e($booking['alamat_pickup'])) ?></span></div>
+            <div class="kv"><span class="k">Estimated Distance</span><span class="v"><?= e($booking['jarak_anggaran'] ?? '-') ?></span></div>
         <?php endif; ?>
-        <div class="kv"><span class="k">Tarikh Dicadang</span><span class="v"><?= e($booking['tarikh_dicadang']) ?></span></div>
+        <div class="kv"><span class="k">Proposed Date</span><span class="v"><?= e($booking['tarikh_dicadang']) ?></span></div>
     </div>
 </div>
 
+<?php if ($booking['status'] !== 'pending_approval'): ?>
+<div class="card">
+    <h3><i class="fa-solid fa-camera"></i> Storage Photos (Proof of Item Location)</h3>
+    <p class="field-hint" style="margin-bottom:var(--space-3);">Take photos of the items at the storage location so the owner can verify their status, and as a reference to confirm during collection. Maximum 3 photos.</p>
+
+    <form method="post" enctype="multipart/form-data">
+        <?= Csrf::field() ?>
+        <input type="hidden" name="action" value="update_photos">
+
+        <div class="photo-grid">
+        <?php for ($n = 1; $n <= PhotoUpload::MAX_PHOTOS; $n++): $foto = $booking["foto_storan_{$n}"]; ?>
+            <div class="photo-slot">
+                <?php if ($foto): ?>
+                    <a href="<?= e($foto) ?>" target="_blank"><img src="<?= e($foto) ?>" alt="Storage photo <?= $n ?>"></a>
+                    <label class="remove-row">
+                        <input type="checkbox" name="remove_foto_<?= $n ?>"> Remove this photo
+                    </label>
+                <?php else: ?>
+                    <div class="photo-slot-empty">Slot <?= $n ?> empty</div>
+                <?php endif; ?>
+                <input type="file" name="foto_<?= $n ?>" accept="image/*" capture="environment">
+            </div>
+        <?php endfor; ?>
+        </div>
+
+        <button type="submit" class="btn btn-sm btn-secondary" style="margin-top:var(--space-4);">Save Storage Photos</button>
+    </form>
+</div>
+<?php endif; ?>
+
 <?php if ($overdue['days'] > 0 && $booking['status'] !== 'returned'): ?>
     <div class="alert alert-error">
-        Booking ni telah overdue selama <strong><?= $overdue['days'] ?> hari</strong> - caj tertunggak: <strong><?= rm($overdue['amount']) ?></strong>.
+        This booking has been overdue for <strong><?= $overdue['days'] ?> day(s)</strong> - outstanding charge: <strong><?= rm($overdue['amount']) ?></strong>.
     </div>
 <?php endif; ?>
 
 <?php if ($booking['status'] === 'pending_approval'): ?>
     <div class="card">
-        <h2>Kelulusan Booking</h2>
-        <p class="muted">Sahkan harga akhir. Caj storan dikira automatik ikut rate card, tapi anda boleh override jika perlu.</p>
+        <h2>Booking Approval</h2>
+        <p class="muted">Confirm the final price. The storage charge is calculated automatically based on the rate card, but you may override it if needed.</p>
         <form method="post">
             <?= Csrf::field() ?>
             <input type="hidden" name="action" value="approve">
 
-            <label class="required" for="harga_storage">Caj Storan (RM)</label>
+            <label class="required" for="harga_storage">Storage Charge (RM)</label>
             <input type="number" step="0.01" min="0" id="harga_storage" name="harga_storage"
                    value="<?= e((string) RateCard::calculateStorage((int) $booking['bilangan_kotak'])) ?>" required>
 
             <?php if ($booking['jenis_servis'] === 'pickup'): ?>
-                <label class="required" for="harga_pickup">Caj Pickup - Jarak + Upah Angkat (RM)</label>
+                <label class="required" for="harga_pickup">Pickup Charge - Distance + Labour (RM)</label>
                 <input type="number" step="0.01" min="0" id="harga_pickup" name="harga_pickup" value="0" required>
-                <p class="muted" style="margin:4px 0 0;">Sila kira berdasarkan jarak sebenar ke alamat pelanggan di atas.</p>
+                <p class="field-hint">Please calculate based on the actual distance to the customer's address above.</p>
             <?php endif; ?>
 
-            <button type="submit" class="btn" style="margin-top:16px;" onclick="return confirm('Lulus booking ni dengan harga yang ditetapkan?')">Lulus Booking & Jana QR</button>
+            <button type="submit" class="btn btn-block" style="margin-top:var(--space-5);" onclick="return confirm('Approve this booking with the price entered?')"><i class="fa-solid fa-check"></i> Approve Booking &amp; Generate QR</button>
         </form>
     </div>
 <?php else: ?>
-    <div class="card">
-        <h2>Harga</h2>
-        <div class="kv"><span class="k">Caj Storan</span><span class="v"><?= rm((float) $booking['harga_storage']) ?></span></div>
-        <?php if ($booking['harga_pickup'] !== null): ?>
-            <div class="kv"><span class="k">Caj Pickup</span><span class="v"><?= rm((float) $booking['harga_pickup']) ?></span></div>
-        <?php endif; ?>
-        <div class="kv"><span class="k"><strong>Jumlah</strong></span><span class="v"><strong><?= rm((float) $booking['harga_total']) ?></strong></span></div>
-    </div>
+    <div class="grid-2">
+        <div class="card">
+            <h2>Price</h2>
+            <div class="kv"><span class="k">Storage Charge</span><span class="v"><?= rm((float) $booking['harga_storage']) ?></span></div>
+            <?php if ($booking['harga_pickup'] !== null): ?>
+                <div class="kv"><span class="k">Pickup Charge</span><span class="v"><?= rm((float) $booking['harga_pickup']) ?></span></div>
+            <?php endif; ?>
+            <div class="kv"><span class="k"><strong>Total</strong></span><span class="v"><strong><?= rm((float) $booking['harga_total']) ?></strong></span></div>
+        </div>
 
-    <div class="card">
-        <h2>Kemaskini Status</h2>
-        <form method="post">
-            <?= Csrf::field() ?>
-            <input type="hidden" name="action" value="update_status">
+        <div class="card">
+            <h2>Update Status</h2>
+            <form method="post">
+                <?= Csrf::field() ?>
+                <input type="hidden" name="action" value="update_status">
 
-            <label class="required" for="new_status">Status Baharu</label>
-            <select id="new_status" name="new_status" required>
-                <option value="">- Pilih -</option>
-                <?php foreach ($updatableStatuses as $key => $label): ?>
-                    <option value="<?= e($key) ?>" <?= $booking['status'] === $key ? 'selected' : '' ?>><?= e($label) ?></option>
-                <?php endforeach; ?>
-            </select>
+                <label class="required" for="new_status">New Status</label>
+                <select id="new_status" name="new_status" required>
+                    <option value="">- Select -</option>
+                    <?php foreach ($updatableStatuses as $key => $label): ?>
+                        <option value="<?= e($key) ?>" <?= $booking['status'] === $key ? 'selected' : '' ?>><?= e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
 
-            <label for="notes">Nota (pilihan)</label>
-            <textarea id="notes" name="notes" placeholder="Contoh: barang diserahkan kepada pelanggan sendiri"></textarea>
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" placeholder="Example: items handed over to the customer in person"></textarea>
 
-            <button type="submit" class="btn" style="margin-top:16px;">Kemaskini Status</button>
-        </form>
+                <button type="submit" class="btn btn-block" style="margin-top:var(--space-4);">Update Status</button>
+            </form>
+        </div>
     </div>
 <?php endif; ?>
 
 <div class="card">
-    <h2>Sejarah Status (Log)</h2>
+    <h2>Status History (Log)</h2>
     <?php if (empty($logs)): ?>
-        <p class="muted">Tiada log lagi.</p>
+        <div class="empty-state">
+            <div class="icon"><i class="fa-solid fa-clock"></i></div>
+            <p>No log entries yet.</p>
+        </div>
     <?php else: ?>
+    <div class="table-responsive">
     <table>
-        <thead><tr><th>Tarikh/Masa</th><th>Status Lama</th><th>Status Baru</th><th>Oleh</th><th>Nota</th></tr></thead>
+        <thead><tr><th>Date/Time</th><th>Old Status</th><th>New Status</th><th>By</th><th>Notes</th></tr></thead>
         <tbody>
-        <?php foreach ($logs as $log): ?>
+        <?php foreach (array_reverse($logs) as $log): ?>
             <tr>
                 <td><?= e(date('d/m/Y H:i', strtotime($log['created_at']))) ?></td>
                 <td><?= e($log['status_lama'] ?? '-') ?></td>
                 <td><?= e($log['status_baru']) ?></td>
                 <td><?= e($log['updated_by']) ?></td>
-                <td><?= e($log['notes'] ?? '') ?></td>
+                <td style="white-space:normal;min-width:160px;"><?= e($log['notes'] ?? '') ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <?php endif; ?>
 </div>
 

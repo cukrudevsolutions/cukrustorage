@@ -7,7 +7,7 @@ use Cukru\Settings;
 use Cukru\Validation;
 use Cukru\RateCard;
 use Cukru\BookingRepository;
-use Cukru\Terms;
+use Cukru\OwnerAuth;
 
 $windows = [
     [Settings::get('window1_start'), Settings::get('window1_end')],
@@ -16,6 +16,15 @@ $windows = [
 $pickupMinAdvance = Settings::getInt('pickup_min_advance_days', 1);
 
 $errors = [];
+
+// Logged-in customers don't need to re-enter their personal details & PIN - reuse the existing record.
+$existingBooking = null;
+if (OwnerAuth::isLoggedIn()) {
+    $ownerIds = OwnerAuth::bookingIds();
+    if (!empty($ownerIds)) {
+        $existingBooking = BookingRepository::findById($ownerIds[0]);
+    }
+}
 
 function date_in_any_window(string $date, array $windows): bool
 {
@@ -27,14 +36,58 @@ function date_in_any_window(string $date, array $windows): bool
     return false;
 }
 
+function format_booking_date(DateTime $d): string
+{
+    return $d->format('j F Y (l)');
+}
+
+/** List every individual date (from today onward) within any allowed window. */
+function build_date_options(array $windows, int $pickupMinAdvance): array
+{
+    $today = new DateTime('today');
+    $pickupMinDate = (clone $today)->modify("+{$pickupMinAdvance} day");
+    $options = [];
+
+    foreach ($windows as [$start, $end]) {
+        $cursor = DateTime::createFromFormat('Y-m-d', $start);
+        $endDate = DateTime::createFromFormat('Y-m-d', $end);
+        if (!$cursor || !$endDate) {
+            continue;
+        }
+        while ($cursor <= $endDate) {
+            if ($cursor >= $today) {
+                $options[] = [
+                    'value' => $cursor->format('Y-m-d'),
+                    'label' => format_booking_date($cursor),
+                    'pickupOk' => $cursor >= $pickupMinDate,
+                ];
+            }
+            $cursor->modify('+1 day');
+        }
+    }
+
+    return $options;
+}
+
+$dateOptions = build_date_options($windows, $pickupMinAdvance);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
 
-    $nama = trim($_POST['nama'] ?? '');
-    $noTelefonRaw = trim($_POST['no_telefon'] ?? '');
-    $pin = trim($_POST['pin'] ?? '');
-    $pinConfirm = trim($_POST['pin_confirm'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    // Logged-in customers: ignore any name/phone/email/PIN values submitted from the form
+    // (these fields are readonly/hidden in the UI) - use the trusted record from the database instead.
+    if ($existingBooking) {
+        $nama = $existingBooking['nama'];
+        $noTelefonRaw = $existingBooking['no_telefon'];
+        $email = $existingBooking['email'];
+        $pin = $pinConfirm = '';
+    } else {
+        $nama = trim($_POST['nama'] ?? '');
+        $noTelefonRaw = trim($_POST['no_telefon'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $pin = trim($_POST['pin'] ?? '');
+        $pinConfirm = trim($_POST['pin_confirm'] ?? '');
+    }
     $bilanganKotak = (int) ($_POST['bilangan_kotak'] ?? 0);
     $jenisServis = $_POST['jenis_servis'] ?? '';
     $alamatPickup = trim($_POST['alamat_pickup'] ?? '');
@@ -45,46 +98,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['_old'] = $_POST;
 
     if (!Validation::isValidName($nama)) {
-        $errors[] = 'Sila isi nama penuh yang sah.';
+        $errors[] = 'Please enter a valid full name.';
     }
     if (!Validation::isValidMalaysianPhone($noTelefonRaw)) {
-        $errors[] = 'Format no. telefon tidak sah. Contoh: 012-3456789.';
+        $errors[] = 'Invalid phone number format. Example: 012-3456789.';
     }
-    if (!Validation::isValidPin($pin)) {
-        $errors[] = 'PIN mesti 4-6 digit nombor sahaja.';
-    } elseif ($pin !== $pinConfirm) {
-        $errors[] = 'PIN dan pengesahan PIN tidak sepadan.';
+    if (!$existingBooking) {
+        if (!Validation::isValidPin($pin)) {
+            $errors[] = 'PIN must be 4-6 digits, numbers only.';
+        } elseif ($pin !== $pinConfirm) {
+            $errors[] = 'PIN and PIN confirmation do not match.';
+        }
     }
     if (!Validation::isValidEmail($email)) {
-        $errors[] = 'Sila isi alamat emel yang sah.';
+        $errors[] = 'Please enter a valid email address.';
     }
     if ($bilanganKotak < 1 || $bilanganKotak > 50) {
-        $errors[] = 'Bilangan kotak mesti antara 1 hingga 50.';
+        $errors[] = 'Number of boxes must be between 1 and 50.';
     }
     if (!in_array($jenisServis, ['dropoff', 'pickup'], true)) {
-        $errors[] = 'Sila pilih jenis servis.';
+        $errors[] = 'Please select a service type.';
     }
     if ($jenisServis === 'pickup' && $alamatPickup === '') {
-        $errors[] = 'Sila isi alamat penuh untuk servis pickup.';
+        $errors[] = 'Please enter your full address for the pickup service.';
     }
 
     $dateObj = DateTime::createFromFormat('Y-m-d', $tarikhDicadang);
     if (!$dateObj) {
-        $errors[] = 'Sila pilih tarikh yang sah.';
+        $errors[] = 'Please select a valid date.';
     } else {
         if (!date_in_any_window($tarikhDicadang, $windows)) {
-            $errors[] = 'Tarikh dicadang mesti dalam tempoh drop-off/pickup yang dibenarkan (lihat tarikh di atas borang).';
+            $errors[] = 'The proposed date must fall within an allowed drop-off/pickup period (see dates above the form).';
         }
         if ($jenisServis === 'pickup') {
             $minDate = (new DateTime('today'))->modify("+{$pickupMinAdvance} day")->format('Y-m-d');
             if ($tarikhDicadang < $minDate) {
-                $errors[] = "Permintaan pickup mesti dibuat sekurang-kurangnya {$pickupMinAdvance} hari sebelum tarikh pickup.";
+                $errors[] = "Pickup requests must be made at least {$pickupMinAdvance} day(s) before the pickup date.";
             }
         }
     }
 
     if (!$termsAccepted) {
-        $errors[] = 'Sila bersetuju dengan Terma & Syarat untuk meneruskan.';
+        $errors[] = 'Please agree to the Terms & Conditions to continue.';
     }
 
     if (empty($errors)) {
@@ -96,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'booking_ref' => $bookingRef,
             'nama' => $nama,
             'no_telefon' => $phone,
-            'pin_hash' => password_hash($pin, PASSWORD_DEFAULT),
+            'pin_hash' => $existingBooking ? $existingBooking['pin_hash'] : password_hash($pin, PASSWORD_DEFAULT),
             'email' => $email,
             'bilangan_kotak' => $bilanganKotak,
             'jenis_servis' => $jenisServis,
@@ -107,27 +162,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         unset($_SESSION['_old']);
+        if ($existingBooking) {
+            $_SESSION['owner_booking_ids'][] = $id;
+        }
         redirect('booking-success.php?ref=' . urlencode($bookingRef));
     }
 }
 
-$pageTitle = 'Borang Booking';
+$pageTitle = 'Booking Form';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<h1>Borang Booking <?= e(Settings::get('site_name', 'CukruStorage')) ?></h1>
-<p class="muted">Isi borang ni untuk daftar simpanan barang anda semasa cuti semester. Harga akhir akan disahkan oleh admin selepas semakan.</p>
+<h1>Booking Form</h1>
+<p class="muted">Fill in this form to register your storage booking for the semester break. The final price will be confirmed by the admin after review.</p>
 
 <div class="card">
-    <h3>Tarikh Penting Sesi Semasa</h3>
-    <div class="kv"><span class="k">Drop-off / Pickup Window 1</span><span class="v"><?= e(Settings::get('window1_start')) ?> - <?= e(Settings::get('window1_end')) ?></span></div>
-    <div class="kv"><span class="k">Drop-off / Pickup Window 2</span><span class="v"><?= e(Settings::get('window2_start')) ?> - <?= e(Settings::get('window2_end')) ?></span></div>
-    <div class="kv"><span class="k">Return Window (ambil semula)</span><span class="v"><?= e(Settings::get('return_window_start')) ?> - <?= e(Settings::get('return_window_end')) ?></span></div>
+    <h3 class="eyebrow" style="margin-bottom:var(--space-3);"><i class="fa-solid fa-calendar-days"></i> Important Dates for This Session</h3>
+    <div class="kv"><span class="k">Drop-off/Pickup Period 1</span><span class="v"><?= e(Settings::get('window1_start')) ?> - <?= e(Settings::get('window1_end')) ?></span></div>
+    <div class="kv"><span class="k">Drop-off/Pickup Period 2</span><span class="v"><?= e(Settings::get('window2_start')) ?> - <?= e(Settings::get('window2_end')) ?></span></div>
+    <div class="kv"><span class="k">Return Period (item collection)</span><span class="v"><?= e(Settings::get('return_window_start')) ?> - <?= e(Settings::get('return_window_end')) ?></span></div>
+
+    <hr class="section-divider">
+    <h3 class="eyebrow" style="margin-bottom:var(--space-3);">Self Drop-off vs Team Pickup</h3>
+    <p style="margin:0 0 var(--space-2);font-size:0.88rem;"><strong>Self drop-off:</strong> you deliver your items yourself to our location within the period stated above.</p>
+    <p style="margin:0;font-size:0.88rem;"><strong>Team pickup:</strong> our team comes to collect your items directly from your address (distance + labour charges will be confirmed by the admin after booking).</p>
+    <?php if ($locationMapsUrl = Settings::get('location_maps_url')): ?>
+        <a class="btn btn-sm btn-secondary" style="margin-top:var(--space-3);" href="<?= e($locationMapsUrl) ?>" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot"></i> View Drop-off Location on Google Maps</a>
+    <?php endif; ?>
 </div>
 
 <?php if (!empty($errors)): ?>
     <div class="alert alert-error">
-        <strong>Sila betulkan ralat berikut:</strong>
+        <strong>Please fix the following errors:</strong>
         <ul style="margin:8px 0 0;padding-left:18px;">
             <?php foreach ($errors as $err): ?><li><?= e($err) ?></li><?php endforeach; ?>
         </ul>
@@ -137,73 +203,112 @@ require __DIR__ . '/partials/header.php';
 <form method="post" class="card" novalidate>
     <?= Csrf::field() ?>
 
-    <h2>Maklumat Anda</h2>
-    <label class="required" for="nama">Nama Penuh</label>
-    <input type="text" id="nama" name="nama" value="<?= old('nama') ?>" required>
+    <h2><i class="fa-solid fa-user"></i> Your Details</h2>
+    <?php if ($existingBooking): ?>
+        <div class="alert alert-info">
+            <span>You are logged in as <strong><?= e($existingBooking['nama']) ?></strong>. Your existing details and PIN will be used directly for this new booking.</span>
+        </div>
+    <?php endif; ?>
+
+    <label class="required" for="nama">Full Name</label>
+    <input type="text" id="nama" name="nama"
+        value="<?= $existingBooking ? e($existingBooking['nama']) : old('nama') ?>"
+        autocomplete="name" <?= $existingBooking ? 'readonly' : '' ?> required>
 
     <div class="grid-2">
         <div>
-            <label class="required" for="no_telefon">No. Telefon</label>
-            <input type="tel" id="no_telefon" name="no_telefon" placeholder="012-3456789" value="<?= old('no_telefon') ?>" required>
-            <p class="muted" style="margin:4px 0 0;">Digunakan untuk log masuk semakan status.</p>
+            <label class="required" for="no_telefon">Phone Number</label>
+            <input type="tel" id="no_telefon" name="no_telefon" placeholder="012-3456789"
+                value="<?= $existingBooking ? e(format_phone($existingBooking['no_telefon'])) : old('no_telefon') ?>"
+                data-phone-format inputmode="numeric" maxlength="12" autocomplete="tel" <?= $existingBooking ? 'readonly' : '' ?> required>
+            <p class="field-hint">Used to log in and check your status.</p>
         </div>
         <div>
-            <label class="required" for="email">Emel</label>
-            <input type="email" id="email" name="email" value="<?= old('email') ?>" required>
-            <p class="muted" style="margin:4px 0 0;">Untuk reset PIN sahaja.</p>
+            <label class="required" for="email">Email</label>
+            <input type="email" id="email" name="email"
+                value="<?= $existingBooking ? e($existingBooking['email']) : old('email') ?>"
+                autocomplete="email" <?= $existingBooking ? 'readonly' : '' ?> required>
+            <p class="field-hint">We'll email your booking slip once it's approved.</p>
         </div>
     </div>
 
+    <?php if (!$existingBooking): ?>
     <div class="grid-2">
         <div>
-            <label class="required" for="pin">Set PIN (4-6 digit)</label>
+            <label class="required" for="pin">Set PIN (4-6 digits)</label>
             <input type="password" inputmode="numeric" pattern="\d*" id="pin" name="pin" maxlength="6" required>
         </div>
         <div>
-            <label class="required" for="pin_confirm">Sahkan PIN</label>
+            <label class="required" for="pin_confirm">Confirm PIN</label>
             <input type="password" inputmode="numeric" pattern="\d*" id="pin_confirm" name="pin_confirm" maxlength="6" required>
         </div>
     </div>
+    <?php endif; ?>
 
-    <h2 style="margin-top:24px;">Maklumat Barang</h2>
-    <label class="required" for="bilangan_kotak">Bilangan Kotak</label>
+    <hr class="section-divider">
+    <h2><i class="fa-solid fa-box"></i> Item Details</h2>
+    <label class="required" for="bilangan_kotak">Number of Boxes</label>
     <input type="number" id="bilangan_kotak" name="bilangan_kotak" min="1" max="50" value="<?= old('bilangan_kotak', '1') ?>" required>
-    <p class="muted" id="hargaPreview" style="margin:4px 0 0;"></p>
+    <div class="price-preview" id="hargaPreview"></div>
+    <?php
+    $waPhone = Settings::get('admin_whatsapp', '');
+    if ($waPhone !== ''):
+        $waMessage = 'Hi admin ' . Settings::get('site_name', 'CukruStorage') . ', I\'d like to ask about the number of boxes for my item storage booking. '
+            . 'My items aren\'t in standard boxes (e.g. sacks/buckets/large bags), so I\'m not sure how many units to count. '
+            . 'Could you help me figure out the right number?';
+        $waUrl = 'https://api.whatsapp.com/send/?phone=' . urlencode($waPhone) . '&text=' . rawurlencode($waMessage);
+    ?>
+    <div class="tip-box">
+        <svg class="whatsapp-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M22.7 9.3a8.9 8.9 0 0 0-14 10.7L7 25l5.2-1.6a8.9 8.9 0 0 0 12.6-8 8.8 8.8 0 0 0-2.1-6.1zm-6.6 13.6a7.4 7.4 0 0 1-3.8-1l-.3-.2-2.8.9.9-2.7-.2-.3a7.4 7.4 0 1 1 13.8-3.7 7.4 7.4 0 0 1-7.6 7zm4-5.5c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4c-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.1 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.7 2.6 4 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.4-.2z"/></svg>
+        <span>Items not in standard boxes (e.g. sacks, buckets, or large bags)? <a href="<?= e($waUrl) ?>" target="_blank" rel="noopener"><strong>Contact Admin via WhatsApp</strong></a> first to confirm the count before submitting this form.</span>
+    </div>
+    <?php endif; ?>
 
-    <label class="required">Jenis Servis</label>
+    <label class="required">Service Type</label>
     <div class="grid-2">
-        <label style="font-weight:400;display:flex;align-items:center;gap:8px;">
-            <input type="radio" name="jenis_servis" value="dropoff" style="width:auto;" <?= ($_POST['jenis_servis'] ?? '') === 'dropoff' ? 'checked' : '' ?> required>
-            Drop-off sendiri
+        <label class="radio-card">
+            <input type="radio" name="jenis_servis" value="dropoff" <?= ($_POST['jenis_servis'] ?? '') === 'dropoff' ? 'checked' : '' ?> required>
+            <i class="fa-solid fa-box-open"></i> Self Drop-off
         </label>
-        <label style="font-weight:400;display:flex;align-items:center;gap:8px;">
-            <input type="radio" name="jenis_servis" value="pickup" style="width:auto;" <?= ($_POST['jenis_servis'] ?? '') === 'pickup' ? 'checked' : '' ?> required>
-            Pickup oleh team
+        <label class="radio-card">
+            <input type="radio" name="jenis_servis" value="pickup" <?= ($_POST['jenis_servis'] ?? '') === 'pickup' ? 'checked' : '' ?> required>
+            <i class="fa-solid fa-truck"></i> Team Pickup
         </label>
     </div>
 
     <div id="pickupFields" style="display:none;">
-        <label class="required" for="alamat_pickup">Alamat Penuh untuk Pickup</label>
+        <label class="required" for="alamat_pickup">Full Address for Pickup</label>
         <textarea id="alamat_pickup" name="alamat_pickup"><?= old('alamat_pickup') ?></textarea>
 
-        <label for="jarak_anggaran">Jarak Anggaran (km, jika tahu)</label>
-        <input type="text" id="jarak_anggaran" name="jarak_anggaran" placeholder="Contoh: 5km" value="<?= old('jarak_anggaran') ?>">
-        <p class="muted" style="margin:4px 0 0;">Caj jarak + upah angkat akan disahkan oleh admin semasa kelulusan.</p>
+        <label for="jarak_anggaran">Estimated Distance (km, if known)</label>
+        <input type="text" id="jarak_anggaran" name="jarak_anggaran" placeholder="Example: 5km" value="<?= old('jarak_anggaran') ?>">
+        <p class="field-hint">Distance + labour charges will be confirmed by the admin during approval.</p>
     </div>
 
-    <label class="required" for="tarikh_dicadang">Tarikh Dicadang (Drop-off / Pickup)</label>
-    <input type="date" id="tarikh_dicadang" name="tarikh_dicadang" value="<?= old('tarikh_dicadang') ?>" required>
+    <label class="required" for="tarikh_dicadang">Proposed Date (Drop-off / Pickup)</label>
+    <select id="tarikh_dicadang" name="tarikh_dicadang" required>
+        <option value="">- Select a date -</option>
+        <?php foreach ($dateOptions as $opt): ?>
+            <option value="<?= e($opt['value']) ?>" data-pickup-ok="<?= $opt['pickupOk'] ? '1' : '0' ?>"
+                <?= ($_POST['tarikh_dicadang'] ?? '') === $opt['value'] ? 'selected' : '' ?>>
+                <?= e($opt['label']) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <p class="field-hint">The list above only shows allowed dates. For Pickup specifically, the date selected must be at least <?= $pickupMinAdvance ?> day(s) from today.</p>
 
+    <hr class="section-divider">
     <div class="checkbox-row">
         <input type="checkbox" id="terms_accepted" name="terms_accepted" <?= isset($_POST['terms_accepted']) ? 'checked' : '' ?> required>
         <label for="terms_accepted" style="margin:0;font-weight:400;">
-            Saya bersetuju dengan <a href="terms.php" target="_blank">Terma &amp; Syarat <?= e(Settings::get('site_name', 'CukruStorage')) ?></a>
+            I agree to the <a href="terms.php" target="_blank"><?= e(Settings::get('site_name', 'CukruStorage')) ?> Terms &amp; Conditions</a>
         </label>
     </div>
 
-    <button type="submit" class="btn btn-block">Hantar Permohonan</button>
+    <button type="submit" class="btn btn-block">Submit Booking</button>
 </form>
 
+<script src="<?= asset('js/phone-format.js') ?>"></script>
 <script>
 const rates = {
     box1: <?= (float) Settings::getFloat('rate_box1', 30) ?>,
@@ -224,7 +329,12 @@ const boxInput = document.getElementById('bilangan_kotak');
 const preview = document.getElementById('hargaPreview');
 function updatePreview() {
     const n = parseInt(boxInput.value, 10) || 0;
-    preview.textContent = n > 0 ? `Anggaran caj storan: RM${calcStorage(n).toFixed(2)} (tertakluk kelulusan admin)` : '';
+    if (n > 0) {
+        preview.style.display = 'block';
+        preview.innerHTML = `Estimated storage charge: <strong>RM${calcStorage(n).toFixed(2)}</strong> (subject to admin approval)`;
+    } else {
+        preview.style.display = 'none';
+    }
 }
 boxInput.addEventListener('input', updatePreview);
 updatePreview();
@@ -238,6 +348,31 @@ function togglePickupFields() {
 }
 servisRadios.forEach(r => r.addEventListener('change', togglePickupFields));
 togglePickupFields();
+
+// Date dropdown - when Pickup is selected, hide dates that don't meet the minimum advance notice.
+const tarikhSelect = document.getElementById('tarikh_dicadang');
+const tarikhOptions = Array.from(tarikhSelect.options).filter(o => o.value !== '');
+
+function updateTarikhOptions() {
+    const isPickup = document.querySelector('input[name=jenis_servis]:checked')?.value === 'pickup';
+    let selectedStillValid = true;
+
+    tarikhOptions.forEach(opt => {
+        const pickupOk = opt.dataset.pickupOk === '1';
+        const shouldDisable = isPickup && !pickupOk;
+        opt.disabled = shouldDisable;
+        opt.hidden = shouldDisable;
+        if (opt.value === tarikhSelect.value && shouldDisable) {
+            selectedStillValid = false;
+        }
+    });
+
+    if (!selectedStillValid) {
+        tarikhSelect.value = '';
+    }
+}
+servisRadios.forEach(r => r.addEventListener('change', updateTarikhOptions));
+updateTarikhOptions();
 </script>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

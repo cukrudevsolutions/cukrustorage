@@ -5,11 +5,14 @@ require_once __DIR__ . '/../config/config.php';
 use Cukru\Settings;
 use Cukru\Terms;
 
-$pageTitle = 'Terma & Syarat';
+$pageTitle = 'Terms & Conditions';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<div class="card">
+<h1><i class="fa-solid fa-scroll"></i> Terms &amp; Conditions</h1>
+<p class="muted">Please read carefully before making a booking.</p>
+
+<div class="card" style="font-size:0.92rem;line-height:1.7;">
     <?= Terms::render(Settings::get('terms_and_conditions', '')) ?>
 </div>
 

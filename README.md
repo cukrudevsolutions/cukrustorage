@@ -88,7 +88,6 @@ keperluan keselamatan #6 dalam spesifikasi projek.
 - [ ] Cuba pickup dengan tarikh kurang dari H-1 — patut ditolak
 - [ ] Submit tanpa tick Terma & Syarat — patut ditolak
 - [ ] Log masuk guna no. telefon + PIN yang didaftarkan
-- [ ] Lupa PIN → semak emel diterima (jika `mail()` dikonfigurasi di hosting) → reset PIN
 - [ ] Dashboard tunjuk status "Menunggu kelulusan admin" sebelum admin approve
 
 ### Admin
@@ -99,6 +98,7 @@ keperluan keselamatan #6 dalam spesifikasi projek.
 - [ ] Carian manual (no. booking / no. telefon / nama) di halaman Scan
 - [ ] Kemaskini status (IN_STORAGE / READY_FOR_RETURN / RETURNED) → semak log tersimpan
 - [ ] Senarai booking — test filter status & carian
+- [ ] Reset PIN pelanggan dari Butiran Booking → PIN baharu dipaparkan sekali sahaja, log masuk owner dengan PIN baharu berjaya
 - [ ] Cuba 5x kata laluan salah → akaun admin patut dikunci 15 minit
 - [ ] Tukar tarikh/rate card/Terma & Syarat di Tetapan → semak ia terpapar terkini di borang booking
 
@@ -114,6 +114,6 @@ keperluan keselamatan #6 dalam spesifikasi projek.
 - **Caj Overdue**: RM10/hari (boleh ubah di Tetapan), grace period 0 hari secara default.
 - **Auto-overdue**: dikira semula setiap kali dashboard admin/owner dimuatkan, dan boleh
   dijadualkan via cron (`bin/sync_overdue.php`) untuk ketepatan tanpa perlu sesiapa log masuk.
-- **Emel reset PIN**: guna fungsi `mail()` bawaan PHP (berfungsi di Hostinger tanpa setup
-  tambahan). Jika perlukan deliverability lebih baik (SMTP/PHPMailer), beritahu saya untuk
-  saya tukar implementasi di `src/Mailer.php`.
+- **Reset PIN**: tiada flow emel — admin reset terus dari halaman Butiran Booking, sistem
+  jana PIN 4-digit rawak yang dipaparkan sekali sahaja untuk admin maklumkan kepada pelanggan
+  (contoh: via WhatsApp/panggilan). PIN lama terus tidak sah selepas reset.

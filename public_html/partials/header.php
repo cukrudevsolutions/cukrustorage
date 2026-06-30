@@ -5,25 +5,37 @@ use Cukru\OwnerAuth;
 use Cukru\Settings;
 
 $siteName = Settings::get('site_name', 'CukruStorage');
+$currentPage = basename($_SERVER['SCRIPT_NAME']);
+
+function owner_nav_active(string $file, string $current): string
+{
+    return $file === $current ? 'active' : '';
+}
 ?>
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($pageTitle ?? $siteName) ?> - <?= e($siteName) ?></title>
+<link rel="icon" type="image/png" href="<?= asset('images/favicon.png') ?>">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
+<?= $extraHead ?? '' ?>
 </head>
 <body>
 <div class="topbar">
-    <a class="brand" href="<?= base_path() ?>/index.php"><?= e($siteName) ?></a>
+    <a class="brand" href="<?= base_path() ?>/index.php">
+        <img src="<?= asset('images/favicon.png') ?>" alt="" class="brand-logo">
+        <?= brand_name_html($siteName) ?>
+    </a>
     <nav>
-        <a href="<?= base_path() ?>/booking.php">Booking Baharu</a>
+        <a href="<?= base_path() ?>/booking.php" class="<?= owner_nav_active('booking.php', $currentPage) ?>"><i class="fa-solid fa-clipboard-list"></i> New Booking</a>
         <?php if (OwnerAuth::isLoggedIn()): ?>
-            <a href="<?= base_path() ?>/dashboard.php">Dashboard Saya</a>
-            <a href="<?= base_path() ?>/logout.php">Log Keluar</a>
+            <a href="<?= base_path() ?>/dashboard.php" class="<?= owner_nav_active('dashboard.php', $currentPage) ?>"><i class="fa-solid fa-gauge"></i> My Dashboard</a>
+            <a href="<?= base_path() ?>/logout.php"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
         <?php else: ?>
-            <a href="<?= base_path() ?>/login.php">Log Masuk</a>
+            <a href="<?= base_path() ?>/login.php" class="<?= owner_nav_active('login.php', $currentPage) ?>"><i class="fa-solid fa-key"></i> Log In</a>
         <?php endif; ?>
     </nav>
 </div>
