@@ -11,12 +11,12 @@ OwnerAuth::requireLogin();
 BookingRepository::syncOverdueStatuses();
 
 $statusLabels = [
-    'pending_approval' => 'Pending Approval',
+    'pending_approval' => 'Waiting for Approval',
     'approved' => 'Approved',
-    'in_storage' => 'In Storage',
-    'ready_for_return' => 'Ready for Return',
-    'returned' => 'Returned',
-    'overdue' => 'Overdue',
+    'in_storage' => 'Items in Storage',
+    'ready_for_return' => 'Ready to Collect',
+    'returned' => 'Collected',
+    'overdue' => 'Overdue — Please Collect',
 ];
 
 $bookings = [];
@@ -29,18 +29,18 @@ foreach (OwnerAuth::bookingIds() as $id) {
 
 $returnWindowEnd = new DateTimeImmutable(Settings::get('return_window_end', '2026-10-09'));
 
-$pageTitle = 'My Dashboard';
+$pageTitle = 'My Storage';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<h1>My Tracking Dashboard</h1>
-<p class="muted">The current status of your item storage booking(s).</p>
+<h1><i class="fa-solid fa-warehouse" style="color:var(--color-primary);font-size:1.2rem;"></i> My Storage</h1>
+<p class="muted">Track your items — see what's happening with your booking.</p>
 
 <?php if (empty($bookings)): ?>
     <div class="card empty-state">
-        <div class="icon"><i class="fa-solid fa-inbox"></i></div>
-        <p>No booking records found.</p>
-        <a class="btn" href="booking.php">Make a New Booking</a>
+        <div class="icon"><i class="fa-solid fa-box-open"></i></div>
+        <p>No bookings yet. Make your first booking now!</p>
+        <a class="btn" href="booking.php"><i class="fa-solid fa-box"></i> New Booking</a>
     </div>
 <?php endif; ?>
 
@@ -63,10 +63,10 @@ require __DIR__ . '/partials/header.php';
             <?php endif; ?>
         </div>
 
-        <div class="kv"><span class="k">Number of Boxes</span><span class="v"><?= (int) $booking['bilangan_kotak'] ?></span></div>
-        <div class="kv"><span class="k">Service Type</span><span class="v"><?= $booking['jenis_servis'] === 'pickup' ? 'Team Pickup' : 'Self Drop-off' ?></span></div>
-        <div class="kv"><span class="k">Proposed Date</span><span class="v"><?= e($booking['tarikh_dicadang']) ?></span></div>
-        <div class="kv"><span class="k">Return Period</span><span class="v"><?= e(Settings::get('return_window_start')) ?> - <?= e(Settings::get('return_window_end')) ?></span></div>
+        <div class="kv"><span class="k">Boxes</span><span class="v"><?= (int) $booking['bilangan_kotak'] ?></span></div>
+        <div class="kv"><span class="k">Service</span><span class="v"><?= $booking['jenis_servis'] === 'pickup' ? 'Team Pickup' : 'Self Drop-off' ?></span></div>
+        <div class="kv"><span class="k">Drop-off/Pickup Date</span><span class="v"><?= e($booking['tarikh_dicadang']) ?></span></div>
+        <div class="kv"><span class="k">Collection Period</span><span class="v"><?= e(Settings::get('return_window_start')) ?> – <?= e(Settings::get('return_window_end')) ?></span></div>
         <div class="kv">
             <span class="k">Price</span>
             <span class="v"><?= $isPending ? '<em style="font-style:italic;color:var(--color-warning);font-weight:600;">Pending admin approval</em>' : rm((float) $booking['harga_total']) ?></span>

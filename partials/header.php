@@ -30,12 +30,20 @@ function owner_nav_active(string $file, string $current): string
         <?= brand_name_html($siteName) ?>
     </a>
     <nav>
-        <a href="<?= base_path() ?>/booking.php" class="<?= owner_nav_active('booking.php', $currentPage) ?>"><i class="fa-solid fa-clipboard-list"></i> New Booking</a>
+        <a href="<?= base_path() ?>/booking.php" class="<?= owner_nav_active('booking.php', $currentPage) ?>">
+            <i class="fa-solid fa-box"></i><span>New Booking</span>
+        </a>
         <?php if (OwnerAuth::isLoggedIn()): ?>
-            <a href="<?= base_path() ?>/dashboard.php" class="<?= owner_nav_active('dashboard.php', $currentPage) ?>"><i class="fa-solid fa-gauge"></i> My Dashboard</a>
-            <a href="<?= base_path() ?>/logout.php"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+            <a href="<?= base_path() ?>/dashboard.php" class="<?= owner_nav_active('dashboard.php', $currentPage) ?>">
+                <i class="fa-solid fa-warehouse"></i><span>My Storage</span>
+            </a>
+            <a href="<?= base_path() ?>/logout.php">
+                <i class="fa-solid fa-door-open"></i><span>Log Out</span>
+            </a>
         <?php else: ?>
-            <a href="<?= base_path() ?>/login.php" class="<?= owner_nav_active('login.php', $currentPage) ?>"><i class="fa-solid fa-key"></i> Log In</a>
+            <a href="<?= base_path() ?>/login.php" class="<?= owner_nav_active('login.php', $currentPage) ?>">
+                <i class="fa-solid fa-key"></i><span>Log In</span>
+            </a>
         <?php endif; ?>
     </nav>
 </div>
