@@ -81,15 +81,20 @@ require __DIR__ . '/partials/header.php';
         <?php endif; ?>
 
         <?php
-        $fotos = array_filter([$booking['foto_storan_1'], $booking['foto_storan_2'], $booking['foto_storan_3']]);
-        if (!empty($fotos)):
+        $photoSlots = array_filter([
+            1 => $booking['foto_storan_1'],
+            2 => $booking['foto_storan_2'],
+            3 => $booking['foto_storan_3'],
+        ], static fn (?string $photo): bool => $photo !== null && $photo !== '');
+        if (!empty($photoSlots)):
         ?>
             <hr class="section-divider">
             <h3 class="eyebrow" style="margin-bottom:var(--space-3);"><i class="fa-solid fa-camera"></i> Items at Storage Location</h3>
             <div class="photo-grid">
-                <?php foreach ($fotos as $i => $foto): ?>
-                    <a href="<?= e($foto) ?>" target="_blank" class="photo-slot" style="display:block;">
-                        <img src="<?= e($foto) ?>" alt="Storage photo <?= $i + 1 ?>">
+                <?php foreach ($photoSlots as $slot => $foto): ?>
+                    <?php $photoUrl = 'storage-photo.php?ref=' . urlencode($booking['booking_ref']) . '&slot=' . $slot; ?>
+                    <a href="<?= e($photoUrl) ?>" target="_blank" class="photo-slot" style="display:block;">
+                        <img src="<?= e($photoUrl) ?>" alt="Storage photo <?= $slot ?>">
                     </a>
                 <?php endforeach; ?>
             </div>

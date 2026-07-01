@@ -322,6 +322,41 @@ $hasPriceSet = $booking['harga_total'] !== null;
 </details>
 
 <div class="card">
+    <h3><i class="fa-solid fa-camera"></i> Storage Photos (max 3)</h3>
+    <p class="muted" style="margin-bottom:var(--space-3);">Upload up to 3 reference photos for the storage location.</p>
+    <form method="post" enctype="multipart/form-data">
+        <?= Csrf::field() ?>
+        <input type="hidden" name="action" value="update_photos">
+        <div class="photo-grid">
+            <?php for ($n = 1; $n <= 3; $n++): ?>
+                <?php $photoValue = $booking['foto_storan_' . $n] ?? null; ?>
+                <div class="photo-slot">
+                    <label class="photo-tap-area" for="foto_<?= $n ?>">
+                        <?php if (!empty($photoValue)): ?>
+                            <img class="photo-thumb" src="<?= e($photoValue) ?>" alt="Storage photo <?= $n ?>">
+                        <?php else: ?>
+                            <div class="photo-slot-empty">
+                                <i class="fa-solid fa-image" style="font-size:1rem;color:var(--color-muted);"></i>
+                                <span style="margin-top:6px;font-size:0.8rem;color:var(--color-muted);">Add photo <?= $n ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </label>
+                    <input class="photo-file-input" id="foto_<?= $n ?>" name="foto_<?= $n ?>" type="file" accept="image/*">
+                    <?php if (!empty($photoValue)): ?>
+                        <label class="remove-row">
+                            <input type="checkbox" name="remove_foto_<?= $n ?>" value="1">
+                            <span>Remove</span>
+                        </label>
+                    <?php endif; ?>
+                </div>
+            <?php endfor; ?>
+        </div>
+        <p class="field-hint" style="margin-top:var(--space-3);">Accepted formats: JPG, PNG, WEBP. Max size 10MB each.</p>
+        <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-cloud-arrow-up"></i> Save Photos</button>
+    </form>
+</div>
+
+<div class="card">
     <h3><i class="fa-solid fa-clock-rotate-left"></i> Activity Log</h3>
     <?php if (empty($logs)): ?>
         <p class="muted" style="text-align:center;padding:var(--space-4) 0;">No log entries yet.</p>
