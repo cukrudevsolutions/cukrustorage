@@ -440,6 +440,7 @@ button::-moz-focus-inner { border: 0; }
 .badge-ready_for_return { background: #d1fae5; color: #065f46; }
 .badge-returned { background: #e5e7eb; color: #374151; }
 .badge-overdue { background: #fee2e2; color: #991b1b; }
+.badge-cancelled { background: #f8d7da; color: #842029; }
 
 /* ---------- Tables ---------- */
 .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 calc(var(--space-5) * -1); padding: 0 var(--space-5); }

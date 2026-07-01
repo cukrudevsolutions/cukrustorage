@@ -17,6 +17,7 @@ $statusLabels = [
     'ready_for_return' => 'Ready to Collect',
     'returned' => 'Collected',
     'overdue' => 'Overdue — Please Collect',
+    'cancelled' => 'Cancelled',
 ];
 
 $bookings = [];
