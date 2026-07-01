@@ -74,7 +74,9 @@ function format_phone(string $digits): string
 function brand_name_html(string $name): string
 {
     if (preg_match('/^(.*?)(\s*)(Storage)$/i', $name, $m)) {
-        return e(rtrim($m[1])) . '<span class="brand-accent">' . e($m[3]) . '</span>';
+        // Wrap dalam satu <span> supaya kedua-dua bahagian jadi SATU flex item
+        // (elak gap CSS terpakai antara "Cukru" dan "Storage" apabila berada dalam flex container)
+        return '<span>' . e(rtrim($m[1])) . '<span class="brand-accent">' . e($m[3]) . '</span></span>';
     }
-    return e($name);
+    return '<span>' . e($name) . '</span>';
 }
