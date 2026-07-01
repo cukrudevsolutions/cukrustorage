@@ -4,7 +4,6 @@ require_once __DIR__ . '/../config/config.php';
 
 use Cukru\AdminAuth;
 use Cukru\BookingRepository;
-use Cukru\DateTimeImmutable;
 use Cukru\RateCard;
 use Cukru\Settings;
 
