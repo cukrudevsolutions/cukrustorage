@@ -349,6 +349,11 @@ function updatePreview() {
 boxInput.addEventListener('input', updatePreview);
 updatePreview();
 
+// Force numeric-only input for PIN fields
+document.querySelectorAll('#pin, #pin_confirm').forEach(el => {
+    el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, ''); });
+});
+
 const pickupFields = document.getElementById('pickupFields');
 const servisRadios = document.querySelectorAll('input[name=jenis_servis]');
 function togglePickupFields() {
