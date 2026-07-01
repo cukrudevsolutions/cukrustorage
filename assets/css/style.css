@@ -204,6 +204,8 @@ select {
 }
 
 .field-hint { margin: var(--space-1) 0 0; color: var(--color-muted); font-size: 0.8rem; }
+.info-scroll-link { color: var(--color-muted); font-size: 0.78rem; margin-left: 2px; vertical-align: middle; font-weight: 400; }
+.info-scroll-link:hover { color: var(--color-primary); text-decoration: none; }
 
 .whatsapp-icon { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
 

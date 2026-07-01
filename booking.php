@@ -184,14 +184,14 @@ require __DIR__ . '/partials/header.php';
 <h1>Booking Form</h1>
 <p class="muted">Fill in this form to register your storage booking for the semester break. The final price will be confirmed by the admin after review.</p>
 
-<div class="card">
+<div class="card" id="section-dates">
     <h3 class="eyebrow" style="margin-bottom:var(--space-3);"><i class="fa-solid fa-calendar-days"></i> Important Dates for This Session</h3>
     <div class="kv"><span class="k">Drop-off/Pickup Period 1</span><span class="v"><?= e(Settings::get('window1_start')) ?> - <?= e(Settings::get('window1_end')) ?></span></div>
     <div class="kv"><span class="k">Drop-off/Pickup Period 2</span><span class="v"><?= e(Settings::get('window2_start')) ?> - <?= e(Settings::get('window2_end')) ?></span></div>
     <div class="kv"><span class="k">Return Period (item collection)</span><span class="v"><?= e(Settings::get('return_window_start')) ?> - <?= e(Settings::get('return_window_end')) ?></span></div>
 
     <hr class="section-divider">
-    <h3 class="eyebrow" style="margin-bottom:var(--space-3);">Self Drop-off vs Team Pickup</h3>
+    <h3 class="eyebrow" style="margin-bottom:var(--space-3);" id="section-service-type">Self Drop-off vs Team Pickup</h3>
     <p style="margin:0 0 var(--space-2);font-size:0.88rem;"><strong>Self drop-off:</strong> you deliver your items yourself to our location within the period stated above.</p>
     <p style="margin:0;font-size:0.88rem;"><strong>Team pickup:</strong> our team comes to collect your items directly from your address (distance + labour charges will be confirmed by the admin after booking).</p>
     <?php if ($locationMapsUrl = Settings::get('location_maps_url')): ?>
@@ -274,7 +274,7 @@ require __DIR__ . '/partials/header.php';
     </div>
     <?php endif; ?>
 
-    <label class="required">Service Type</label>
+    <label class="required">Service Type <a href="#section-service-type" class="info-scroll-link" title="What's the difference?"><i class="fa-solid fa-circle-info"></i></a></label>
     <div class="grid-2">
         <label class="radio-card">
             <input type="radio" name="jenis_servis" value="dropoff" <?= ($_POST['jenis_servis'] ?? '') === 'dropoff' ? 'checked' : '' ?> required>
@@ -295,7 +295,7 @@ require __DIR__ . '/partials/header.php';
         <p class="field-hint">Distance + labour charges will be confirmed by the admin during approval.</p>
     </div>
 
-    <label class="required" for="tarikh_dicadang">Proposed Date (Drop-off / Pickup)</label>
+    <label class="required" for="tarikh_dicadang">Proposed Date (Drop-off / Pickup) <a href="#section-dates" class="info-scroll-link" title="View allowed dates"><i class="fa-solid fa-circle-info"></i></a></label>
     <select id="tarikh_dicadang" name="tarikh_dicadang" required>
         <option value="">- Select a date -</option>
         <?php foreach ($dateOptions as $opt): ?>
@@ -388,6 +388,15 @@ function updateTarikhOptions() {
 }
 servisRadios.forEach(r => r.addEventListener('change', updateTarikhOptions));
 updateTarikhOptions();
+
+// Smooth scroll for info links
+document.querySelectorAll('.info-scroll-link').forEach(link => {
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});
 
 <?php if (!$existingBooking): ?>
 // Real-time phone number availability check
