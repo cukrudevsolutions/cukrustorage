@@ -104,13 +104,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $isFirstTimeInStorage = $booking['status'] === 'approved' && $newStatus === 'in_storage';
             BookingRepository::updateStatus($id, $newStatus, AdminAuth::username(), $notes);
 
-            $successMsg = 'Booking status updated.';
+            $successMsg = 'Status updated to: ' . ($updatableStatuses[$newStatus] ?? $newStatus) . '.';
             if ($isFirstTimeInStorage) {
                 $updated = BookingRepository::findById($id);
                 $emailSent = SlipMailer::sendStorageSlip($updated);
-                $successMsg .= $emailSent ? ' Storage confirmation slip emailed to the customer.' : ' (Slip email failed to send - please check the mail server configuration.)';
+                $successMsg .= $emailSent ? ' Confirmation slip emailed to the customer.' : ' (Slip email failed.)';
             }
             flash_set('success', $successMsg);
+        }
+        redirect('admin/booking-detail.php?id=' . $id);
+    }
+
+    if ($action === 'edit_booking') {
+        $fields = [];
+        $newBoxes = (int) ($_POST['bilangan_kotak'] ?? $booking['bilangan_kotak']);
+        if ($newBoxes >= 1 && $newBoxes <= 50) $fields['bilangan_kotak'] = $newBoxes;
+
+        $newDate = trim($_POST['tarikh_dicadang'] ?? '');
+        if ($newDate && DateTime::createFromFormat('Y-m-d', $newDate)) $fields['tarikh_dicadang'] = $newDate;
+
+        if ($booking['jenis_servis'] === 'pickup') {
+            $newAddr = trim($_POST['alamat_pickup'] ?? '');
+            if ($newAddr) $fields['alamat_pickup'] = $newAddr;
+            $newJarak = trim($_POST['jarak_anggaran'] ?? '');
+            $fields['jarak_anggaran'] = $newJarak ?: null;
+        }
+
+        if (!empty($fields)) {
+            $setClauses = implode(', ', array_map(fn($k) => "$k = :$k", array_keys($fields)));
+            $fields['id'] = $id;
+            $pdo = \Cukru\Database::pdo();
+            $pdo->prepare("UPDATE bookings SET $setClauses, updated_at = NOW() WHERE id = :id")->execute($fields);
+            flash_set('success', 'Booking details updated.');
         }
         redirect('admin/booking-detail.php?id=' . $id);
     }
@@ -264,37 +289,106 @@ require __DIR__ . '/partials/header.php';
         </form>
     </div>
 <?php else: ?>
-    <div class="grid-2">
-        <div class="card">
-            <h2>Price</h2>
-            <div class="kv"><span class="k">Storage Charge</span><span class="v"><?= rm((float) $booking['harga_storage']) ?></span></div>
-            <?php if ($booking['harga_pickup'] !== null): ?>
-                <div class="kv"><span class="k">Pickup Charge</span><span class="v"><?= rm((float) $booking['harga_pickup']) ?></span></div>
-            <?php endif; ?>
-            <div class="kv"><span class="k"><strong>Total</strong></span><span class="v"><strong><?= rm((float) $booking['harga_total']) ?></strong></span></div>
-        </div>
+    <?php
+    // Status action cards: what admin can do next
+    $statusActions = [
+        'approved' => [
+            ['status' => 'in_storage', 'label' => 'Items Received — In Storage', 'icon' => 'fa-warehouse', 'desc' => 'Tap when you have received the customer\'s items.', 'primary' => true],
+        ],
+        'in_storage' => [
+            ['status' => 'ready_for_return', 'label' => 'Ready to Collect', 'icon' => 'fa-bell', 'desc' => 'Notify that items are ready for the customer to collect.', 'primary' => true],
+            ['status' => 'overdue', 'label' => 'Mark Overdue', 'icon' => 'fa-triangle-exclamation', 'desc' => 'Customer has not collected past the deadline.', 'primary' => false],
+        ],
+        'ready_for_return' => [
+            ['status' => 'returned', 'label' => 'Items Collected ✓', 'icon' => 'fa-circle-check', 'desc' => 'Customer has collected their items. Close this booking.', 'primary' => true],
+            ['status' => 'overdue', 'label' => 'Mark Overdue', 'icon' => 'fa-triangle-exclamation', 'desc' => 'Customer has not collected past the deadline.', 'primary' => false],
+        ],
+        'overdue' => [
+            ['status' => 'returned', 'label' => 'Items Collected ✓', 'icon' => 'fa-circle-check', 'desc' => 'Customer has finally collected their items.', 'primary' => true],
+        ],
+        'returned' => [],
+    ];
+    $nextActions = $statusActions[$booking['status']] ?? [];
+    ?>
 
-        <div class="card">
-            <h2>Update Status</h2>
-            <form method="post">
+    <?php if ($booking['status'] !== 'returned'): ?>
+    <div class="card" id="status-section">
+        <h2><i class="fa-solid fa-arrow-right-arrow-left"></i> Update Status</h2>
+
+        <?php foreach ($nextActions as $act): ?>
+        <form method="post" style="margin-bottom:var(--space-3);">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="action" value="update_status">
+            <input type="hidden" name="new_status" value="<?= e($act['status']) ?>">
+            <button type="submit" class="status-action-btn <?= $act['primary'] ? 'status-action-primary' : 'status-action-secondary' ?>"
+                onclick="return confirm('Mark as: <?= e($act['label']) ?>?')">
+                <i class="fa-solid <?= e($act['icon']) ?> status-action-icon"></i>
+                <span>
+                    <strong><?= e($act['label']) ?></strong>
+                    <small><?= e($act['desc']) ?></small>
+                </span>
+            </button>
+        </form>
+        <?php endforeach; ?>
+
+        <details style="margin-top:var(--space-2);">
+            <summary style="font-size:0.82rem;color:var(--color-muted);cursor:pointer;">Add a note / other status</summary>
+            <form method="post" style="margin-top:var(--space-3);">
                 <?= Csrf::field() ?>
                 <input type="hidden" name="action" value="update_status">
-
-                <label class="required" for="new_status">New Status</label>
-                <select id="new_status" name="new_status" required>
+                <label for="new_status_other">Status</label>
+                <select id="new_status_other" name="new_status" required>
                     <option value="">- Select -</option>
                     <?php foreach ($updatableStatuses as $key => $label): ?>
                         <option value="<?= e($key) ?>" <?= $booking['status'] === $key ? 'selected' : '' ?>><?= e($label) ?></option>
                     <?php endforeach; ?>
                 </select>
-
                 <label for="notes">Notes (optional)</label>
-                <textarea id="notes" name="notes" placeholder="Example: items handed over to the customer in person"></textarea>
-
-                <button type="submit" class="btn btn-block" style="margin-top:var(--space-4);">Update Status</button>
+                <textarea id="notes" name="notes" rows="2" placeholder="e.g. Items handed over at counter"></textarea>
+                <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);">Update</button>
             </form>
-        </div>
+        </details>
     </div>
+    <?php else: ?>
+    <div class="card" style="text-align:center;padding:var(--space-5);">
+        <i class="fa-solid fa-circle-check" style="font-size:2rem;color:var(--color-success);"></i>
+        <p style="font-weight:700;margin-top:var(--space-2);">Booking Complete</p>
+        <p class="muted">Items have been collected. No further action needed.</p>
+    </div>
+    <?php endif; ?>
+
+    <div class="card">
+        <h2><i class="fa-solid fa-dollar-sign"></i> Price</h2>
+        <div class="kv"><span class="k">Storage</span><span class="v"><?= rm((float) $booking['harga_storage']) ?></span></div>
+        <?php if ($booking['harga_pickup'] !== null): ?>
+            <div class="kv"><span class="k">Pickup</span><span class="v"><?= rm((float) $booking['harga_pickup']) ?></span></div>
+        <?php endif; ?>
+        <div class="kv"><span class="k"><strong>Total</strong></span><span class="v"><strong style="font-size:1.1rem;"><?= rm((float) $booking['harga_total']) ?></strong></span></div>
+    </div>
+
+    <details class="card" style="padding:var(--space-4);">
+        <summary style="cursor:pointer;font-weight:700;font-size:0.95rem;"><i class="fa-solid fa-pen-to-square"></i> Edit Booking Details</summary>
+        <form method="post" style="margin-top:var(--space-4);">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="action" value="edit_booking">
+
+            <label for="edit_date">Proposed Date (Drop-off / Pickup)</label>
+            <input type="date" id="edit_date" name="tarikh_dicadang" value="<?= e($booking['tarikh_dicadang']) ?>">
+
+            <label for="edit_boxes">Number of Boxes</label>
+            <input type="number" id="edit_boxes" name="bilangan_kotak" min="1" max="50" value="<?= (int) $booking['bilangan_kotak'] ?>">
+
+            <?php if ($booking['jenis_servis'] === 'pickup'): ?>
+                <label for="edit_address">Pickup Address</label>
+                <textarea id="edit_address" name="alamat_pickup" rows="2"><?= e($booking['alamat_pickup'] ?? '') ?></textarea>
+
+                <label for="edit_distance">Estimated Distance</label>
+                <input type="text" id="edit_distance" name="jarak_anggaran" value="<?= e($booking['jarak_anggaran'] ?? '') ?>" placeholder="e.g. 5km">
+            <?php endif; ?>
+
+            <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-4);"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+        </form>
+    </details>
 <?php endif; ?>
 
 <div class="card">
