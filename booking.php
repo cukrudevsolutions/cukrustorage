@@ -102,6 +102,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (!Validation::isValidMalaysianPhone($noTelefonRaw)) {
         $errors[] = 'Invalid phone number format. Example: 012-3456789.';
+    } elseif (!$existingBooking) {
+        // Phone exists in the system but user is not logged in — redirect to login.
+        // This prevents a different person from registering under someone else's number.
+        $normalizedPhone = Validation::normalizePhone($noTelefonRaw);
+        if (!empty(BookingRepository::findAllByPhone($normalizedPhone))) {
+            flash_set('info', 'This phone number already has a booking. Please log in to make another booking.');
+            redirect('login.php');
+        }
     }
     if (!$existingBooking) {
         if (!Validation::isValidPin($pin)) {
@@ -221,6 +229,9 @@ require __DIR__ . '/partials/header.php';
             <input type="tel" id="no_telefon" name="no_telefon" placeholder="012-3456789"
                 value="<?= $existingBooking ? e(format_phone($existingBooking['no_telefon'])) : old('no_telefon') ?>"
                 data-phone-format inputmode="numeric" maxlength="12" autocomplete="tel" <?= $existingBooking ? 'readonly' : '' ?> required>
+            <?php if (!$existingBooking): ?>
+            <div id="phone-status" style="display:none;margin-top:6px;font-size:0.8rem;align-items:center;gap:6px;"></div>
+            <?php endif; ?>
             <p class="field-hint">Used to log in and check your status.</p>
         </div>
         <div>
@@ -373,6 +384,71 @@ function updateTarikhOptions() {
 }
 servisRadios.forEach(r => r.addEventListener('change', updateTarikhOptions));
 updateTarikhOptions();
+
+<?php if (!$existingBooking): ?>
+// Real-time phone number availability check
+const phoneInput = document.getElementById('no_telefon');
+const phoneStatus = document.getElementById('phone-status');
+const submitBtn = document.querySelector('button[type=submit]');
+let phoneCheckTimer = null;
+
+function setPhoneStatus(type, message, loginUrl) {
+    phoneStatus.innerHTML = '';
+    phoneStatus.style.display = 'flex';
+
+    const icon = document.createElement('i');
+    const text = document.createElement('span');
+    text.style.flex = '1';
+
+    if (type === 'available') {
+        icon.className = 'fa-solid fa-circle-check';
+        icon.style.color = 'var(--color-success)';
+        text.style.color = 'var(--color-success)';
+        text.textContent = 'Available — you can proceed.';
+        submitBtn.disabled = false;
+    } else if (type === 'exists') {
+        icon.className = 'fa-solid fa-circle-xmark';
+        icon.style.color = 'var(--color-danger)';
+        text.style.color = 'var(--color-danger)';
+        text.innerHTML = 'This number is already registered. <a href="' + loginUrl + '" style="font-weight:700;">Log in here</a> to make another booking.';
+        submitBtn.disabled = true;
+    } else if (type === 'checking') {
+        icon.className = 'fa-solid fa-circle-notch fa-spin';
+        icon.style.color = 'var(--color-muted)';
+        text.style.color = 'var(--color-muted)';
+        text.textContent = 'Checking...';
+        submitBtn.disabled = true;
+    } else {
+        phoneStatus.style.display = 'none';
+        submitBtn.disabled = false;
+    }
+
+    phoneStatus.appendChild(icon);
+    phoneStatus.appendChild(text);
+}
+
+function checkPhone() {
+    const raw = phoneInput.value.replace(/\D/g, '');
+    if (raw.length < 10) { setPhoneStatus('hide'); return; }
+
+    setPhoneStatus('checking');
+    fetch('<?= base_path() ?>/check-phone.php?phone=' + encodeURIComponent(phoneInput.value))
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'exists') setPhoneStatus('exists', '', '<?= base_path() ?>/login.php');
+            else if (data.status === 'available') setPhoneStatus('available');
+            else setPhoneStatus('hide');
+        })
+        .catch(() => setPhoneStatus('hide'));
+}
+
+phoneInput.addEventListener('input', () => {
+    clearTimeout(phoneCheckTimer);
+    phoneCheckTimer = setTimeout(checkPhone, 500);
+});
+
+if (phoneInput.value.trim()) checkPhone();
+<?php endif; ?>
 </script>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
