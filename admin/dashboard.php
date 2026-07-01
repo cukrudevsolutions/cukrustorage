@@ -32,6 +32,7 @@ foreach (['approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'] a
 }
 $pendingTotal = $totals['pending_approval'] ?? 0.0;
 $inStorageTotal = $totals['in_storage'] ?? 0.0;
+$collectedTotal = $totals['returned'] ?? 0.0;
 $allTotal = max($allTotal, $confirmedTotal + $pendingTotal);
 
 $pending = BookingRepository::listFiltered('pending_approval', null, 1, 10);
@@ -64,6 +65,16 @@ require __DIR__ . '/partials/header.php';
         <div class="stat-num"><?= rm($confirmedTotal) ?></div>
         <div class="muted">Confirmed Revenue</div>
         <p class="field-hint">Revenue from approved/in-storage/returned bookings.</p>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-num"><?= rm($inStorageTotal) ?></div>
+        <div class="muted">In Storage Value</div>
+        <p class="field-hint">Amount currently in storage, expected once collected.</p>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-num"><?= rm($collectedTotal) ?></div>
+        <div class="muted">Collected Revenue</div>
+        <p class="field-hint">Already received revenue from returned bookings.</p>
     </div>
     <div class="card stat-card">
         <div class="stat-num"><?= rm($pendingTotal) ?></div>
