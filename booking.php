@@ -40,6 +40,12 @@ function format_booking_date(DateTime $d): string
     return $d->format('j F Y (l)');
 }
 
+function format_short_date(string $date): string
+{
+    $d = DateTime::createFromFormat('Y-m-d', $date);
+    return $d ? $d->format('j F Y') : $date;
+}
+
 /** List every individual date (from today onward) within any allowed window. */
 function build_date_options(array $windows): array
 {
@@ -190,9 +196,9 @@ require __DIR__ . '/partials/header.php';
 
 <div class="card" id="section-dates">
     <h3 class="eyebrow" style="margin-bottom:var(--space-3);"><i class="fa-solid fa-calendar-days"></i> Key Dates</h3>
-    <div class="kv"><span class="k">Drop-off / Pickup Period 1</span><span class="v"><?= e(Settings::get('window1_start')) ?> – <?= e(Settings::get('window1_end')) ?></span></div>
-    <div class="kv"><span class="k">Drop-off / Pickup Period 2</span><span class="v"><?= e(Settings::get('window2_start')) ?> – <?= e(Settings::get('window2_end')) ?></span></div>
-    <div class="kv"><span class="k">Collection Period</span><span class="v"><?= e(Settings::get('return_window_start')) ?> – <?= e(Settings::get('return_window_end')) ?></span></div>
+    <div class="kv"><span class="k">Drop-off / Pickup Period 1</span><span class="v"><?= e(format_short_date(Settings::get('window1_start'))) ?> – <?= e(format_short_date(Settings::get('window1_end'))) ?></span></div>
+    <div class="kv"><span class="k">Drop-off / Pickup Period 2</span><span class="v"><?= e(format_short_date(Settings::get('window2_start'))) ?> – <?= e(format_short_date(Settings::get('window2_end'))) ?></span></div>
+    <div class="kv"><span class="k">Collection Period</span><span class="v"><?= e(format_short_date(Settings::get('return_window_start'))) ?> – <?= e(format_short_date(Settings::get('return_window_end'))) ?></span></div>
 </div>
 
 <?php if (!empty($errors)): ?>
