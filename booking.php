@@ -177,26 +177,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Booking Form';
+$waPhoneRaw = Settings::get('admin_whatsapp', '');
+$waEnquiryUrl = $waPhoneRaw ? 'https://api.whatsapp.com/send/?phone=' . urlencode($waPhoneRaw) . '&text=' . rawurlencode('Hi ' . Settings::get('site_name', 'CukruStorage') . '! I\'d like to enquire about storing my items for the semester break.') : null;
+
+$pageTitle = 'Storage Booking';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<h1>Booking Form</h1>
-<p class="muted">Fill in this form to register your storage booking for the semester break. The final price will be confirmed by the admin after review.</p>
+<?php if ($waEnquiryUrl): ?>
+<div class="card" style="border-color:#25D366;border-left:4px solid #25D366;background:var(--color-success-bg);">
+    <div style="display:flex;align-items:flex-start;gap:var(--space-3);">
+        <svg viewBox="0 0 32 32" style="width:28px;height:28px;flex-shrink:0;margin-top:2px;"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M22.7 9.3a8.9 8.9 0 0 0-14 10.7L7 25l5.2-1.6a8.9 8.9 0 0 0 12.6-8 8.8 8.8 0 0 0-2.1-6.1zm-6.6 13.6a7.4 7.4 0 0 1-3.8-1l-.3-.2-2.8.9.9-2.7-.2-.3a7.4 7.4 0 1 1 13.8-3.7 7.4 7.4 0 0 1-7.6 7zm4-5.5c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4c-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.1 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.7 2.6 4 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.4-.2z"/></svg>
+        <div style="flex:1;">
+            <p style="font-weight:800;margin:0 0 4px;color:#166534;">WhatsApp Us First — Before Filling This Form</p>
+            <p style="font-size:0.85rem;margin:0 0 var(--space-3);color:#166534;">This form is for <strong>record purposes only</strong>. All pricing, box count, and scheduling must be agreed via WhatsApp before you submit. Walk-ins or unconfirmed bookings will not be accepted.</p>
+            <a href="<?= e($waEnquiryUrl) ?>" target="_blank" rel="noopener" class="btn btn-sm" style="background:#25D366;color:#fff;border:none;"><i class="fa-brands fa-whatsapp"></i> Chat with Us Now</a>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="card" id="section-dates">
-    <h3 class="eyebrow" style="margin-bottom:var(--space-3);"><i class="fa-solid fa-calendar-days"></i> Important Dates for This Session</h3>
-    <div class="kv"><span class="k">Drop-off/Pickup Period 1</span><span class="v"><?= e(Settings::get('window1_start')) ?> - <?= e(Settings::get('window1_end')) ?></span></div>
-    <div class="kv"><span class="k">Drop-off/Pickup Period 2</span><span class="v"><?= e(Settings::get('window2_start')) ?> - <?= e(Settings::get('window2_end')) ?></span></div>
-    <div class="kv"><span class="k">Return Period (item collection)</span><span class="v"><?= e(Settings::get('return_window_start')) ?> - <?= e(Settings::get('return_window_end')) ?></span></div>
-
-    <hr class="section-divider">
-    <h3 class="eyebrow" style="margin-bottom:var(--space-3);" id="section-service-type">Self Drop-off vs Team Pickup</h3>
-    <p style="margin:0 0 var(--space-2);font-size:0.88rem;"><strong>Self drop-off:</strong> you deliver your items yourself to our location within the period stated above.</p>
-    <?php if ($locationMapsUrl = Settings::get('location_maps_url')): ?>
-        <a class="btn btn-sm btn-secondary" style="margin-bottom:var(--space-3);" href="<?= e($locationMapsUrl) ?>" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot"></i> View Drop-off Location on Google Maps</a>
-    <?php endif; ?>
-    <p style="margin:0;font-size:0.88rem;"><strong>Team pickup:</strong> our team comes to collect your items directly from your address (distance + labour charges will be confirmed by the admin after booking).</p>
+    <h3 class="eyebrow" style="margin-bottom:var(--space-3);"><i class="fa-solid fa-calendar-days"></i> Key Dates</h3>
+    <div class="kv"><span class="k">Drop-off / Pickup Period 1</span><span class="v"><?= e(Settings::get('window1_start')) ?> – <?= e(Settings::get('window1_end')) ?></span></div>
+    <div class="kv"><span class="k">Drop-off / Pickup Period 2</span><span class="v"><?= e(Settings::get('window2_start')) ?> – <?= e(Settings::get('window2_end')) ?></span></div>
+    <div class="kv"><span class="k">Collection Period</span><span class="v"><?= e(Settings::get('return_window_start')) ?> – <?= e(Settings::get('return_window_end')) ?></span></div>
 </div>
 
 <?php if (!empty($errors)): ?>
@@ -213,15 +218,11 @@ require __DIR__ . '/partials/header.php';
 
     <h2><i class="fa-solid fa-user"></i> Your Details</h2>
     <?php if ($existingBooking): ?>
-        <div class="alert alert-info">
-            <span>You are logged in as <strong><?= e($existingBooking['nama']) ?></strong>. Your existing details and PIN will be used directly for this new booking.</span>
-        </div>
+        <div class="alert alert-info"><span>Logged in as <strong><?= e($existingBooking['nama']) ?></strong> — your details and PIN will be reused.</span></div>
     <?php endif; ?>
 
     <label class="required" for="nama">Full Name</label>
-    <input type="text" id="nama" name="nama"
-        value="<?= $existingBooking ? e($existingBooking['nama']) : old('nama') ?>"
-        autocomplete="name" <?= $existingBooking ? 'readonly' : '' ?> required>
+    <input type="text" id="nama" name="nama" value="<?= $existingBooking ? e($existingBooking['nama']) : old('nama') ?>" autocomplete="name" <?= $existingBooking ? 'readonly' : '' ?> required>
 
     <div class="grid-2">
         <div>
@@ -235,46 +236,38 @@ require __DIR__ . '/partials/header.php';
         </div>
         <div>
             <label class="required" for="email">Email</label>
-            <input type="email" id="email" name="email"
-                value="<?= $existingBooking ? e($existingBooking['email']) : old('email') ?>"
-                autocomplete="email" <?= $existingBooking ? 'readonly' : '' ?> required>
-            <p class="field-hint">We'll email your booking slip once it's approved.</p>
+            <input type="email" id="email" name="email" value="<?= $existingBooking ? e($existingBooking['email']) : old('email') ?>" autocomplete="email" <?= $existingBooking ? 'readonly' : '' ?> required>
         </div>
     </div>
 
     <?php if (!$existingBooking): ?>
     <div class="grid-2">
         <div>
-            <label class="required" for="pin">Set PIN (4-6 digits)</label>
-            <input type="password" inputmode="numeric" pattern="\d*" id="pin" name="pin" maxlength="6" required>
+            <label class="required" for="pin">PIN (4-6 digits)</label>
+            <input type="password" inputmode="numeric" pattern="\d*" id="pin" name="pin" maxlength="6" placeholder="••••" required>
         </div>
         <div>
             <label class="required" for="pin_confirm">Confirm PIN</label>
-            <input type="password" inputmode="numeric" pattern="\d*" id="pin_confirm" name="pin_confirm" maxlength="6" required>
+            <input type="password" inputmode="numeric" pattern="\d*" id="pin_confirm" name="pin_confirm" maxlength="6" placeholder="••••" required>
         </div>
     </div>
+    <p class="field-hint">Your PIN is used to log in and check your booking status anytime.</p>
     <?php endif; ?>
 
     <hr class="section-divider">
     <h2><i class="fa-solid fa-box"></i> Item Details</h2>
+
     <label class="required" for="bilangan_kotak">Number of Boxes</label>
     <input type="number" id="bilangan_kotak" name="bilangan_kotak" min="1" max="50" value="<?= old('bilangan_kotak', '1') ?>" required>
     <div class="price-preview" id="hargaPreview"></div>
-    <?php
-    $waPhone = Settings::get('admin_whatsapp', '');
-    if ($waPhone !== ''):
-        $waMessage = 'Hi admin ' . Settings::get('site_name', 'CukruStorage') . ', I\'d like to ask about the number of boxes for my item storage booking. '
-            . 'My items aren\'t in standard boxes (e.g. sacks/buckets/large bags), so I\'m not sure how many units to count. '
-            . 'Could you help me figure out the right number?';
-        $waUrl = 'https://api.whatsapp.com/send/?phone=' . urlencode($waPhone) . '&text=' . rawurlencode($waMessage);
-    ?>
-    <div class="tip-box">
-        <svg class="whatsapp-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M22.7 9.3a8.9 8.9 0 0 0-14 10.7L7 25l5.2-1.6a8.9 8.9 0 0 0 12.6-8 8.8 8.8 0 0 0-2.1-6.1zm-6.6 13.6a7.4 7.4 0 0 1-3.8-1l-.3-.2-2.8.9.9-2.7-.2-.3a7.4 7.4 0 1 1 13.8-3.7 7.4 7.4 0 0 1-7.6 7zm4-5.5c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4c-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.1 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.7 2.6 4 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.4-.2z"/></svg>
-        <span>Items not in standard boxes (e.g. sacks, buckets, or large bags)? <a href="<?= e($waUrl) ?>" target="_blank" rel="noopener"><strong>Contact Admin via WhatsApp</strong></a> first to confirm the count before submitting this form.</span>
-    </div>
-    <?php endif; ?>
+    <p class="field-hint"><i class="fa-solid fa-info-circle"></i> Confirm your box count with us on WhatsApp before submitting.</p>
 
-    <label class="required">Service Type <a href="#section-service-type" class="info-scroll-link" title="What's the difference?"><i class="fa-solid fa-circle-info"></i></a></label>
+    <div class="tip-box" style="margin-top:var(--space-3);">
+        <i class="fa-solid fa-shield" style="color:var(--color-primary);flex-shrink:0;margin-top:2px;"></i>
+        <span><strong>Packing tip:</strong> Please wrap all items in clear stretch wrap / plastic before packing — this keeps your belongings secure and intact during storage.</span>
+    </div>
+
+    <label class="required" style="margin-top:var(--space-4);">Service Type <a href="#section-service-type" class="info-scroll-link" title="What's the difference?"><i class="fa-solid fa-circle-info"></i></a></label>
     <div class="grid-2">
         <label class="radio-card">
             <input type="radio" name="jenis_servis" value="dropoff" <?= ($_POST['jenis_servis'] ?? '') === 'dropoff' ? 'checked' : '' ?> required>
@@ -287,25 +280,19 @@ require __DIR__ . '/partials/header.php';
     </div>
 
     <div id="pickupFields" style="display:none;">
-        <label class="required" for="alamat_pickup">Full Address for Pickup</label>
+        <label class="required" for="alamat_pickup">Pickup Address</label>
         <textarea id="alamat_pickup" name="alamat_pickup"><?= old('alamat_pickup') ?></textarea>
-
-        <label for="jarak_anggaran">Estimated Distance (km, if known)</label>
-        <input type="text" id="jarak_anggaran" name="jarak_anggaran" placeholder="Example: 5km" value="<?= old('jarak_anggaran') ?>">
-        <p class="field-hint">Distance + labour charges will be confirmed by the admin during approval.</p>
+        <label for="jarak_anggaran">Estimated Distance (optional)</label>
+        <input type="text" id="jarak_anggaran" name="jarak_anggaran" placeholder="e.g. 5km" value="<?= old('jarak_anggaran') ?>">
     </div>
 
-    <label class="required" for="tarikh_dicadang">Proposed Date (Drop-off / Pickup) <a href="#section-dates" class="info-scroll-link" title="View allowed dates"><i class="fa-solid fa-circle-info"></i></a></label>
+    <label class="required" for="tarikh_dicadang">Date <a href="#section-dates" class="info-scroll-link" title="View allowed dates"><i class="fa-solid fa-circle-info"></i></a></label>
     <select id="tarikh_dicadang" name="tarikh_dicadang" required>
         <option value="">- Select a date -</option>
         <?php foreach ($dateOptions as $opt): ?>
-            <option value="<?= e($opt['value']) ?>" data-pickup-ok="<?= $opt['pickupOk'] ? '1' : '0' ?>"
-                <?= ($_POST['tarikh_dicadang'] ?? '') === $opt['value'] ? 'selected' : '' ?>>
-                <?= e($opt['label']) ?>
-            </option>
+            <option value="<?= e($opt['value']) ?>" data-pickup-ok="<?= $opt['pickupOk'] ? '1' : '0' ?>" <?= ($_POST['tarikh_dicadang'] ?? '') === $opt['value'] ? 'selected' : '' ?>><?= e($opt['label']) ?></option>
         <?php endforeach; ?>
     </select>
-    <p class="field-hint">The list above only shows allowed dates. For Pickup specifically, the date selected must be at least <?= $pickupMinAdvance ?> day(s) from today.</p>
 
     <hr class="section-divider">
     <div class="checkbox-row">
