@@ -267,15 +267,29 @@ require __DIR__ . '/partials/header.php';
         <span><strong>Packing tip:</strong> Please wrap all items in clear stretch wrap / plastic before packing — this keeps your belongings secure and intact during storage.</span>
     </div>
 
-    <label class="required" style="margin-top:var(--space-4);">Service Type <a href="#section-service-type" class="info-scroll-link" title="What's the difference?"><i class="fa-solid fa-circle-info"></i></a></label>
+    <label class="required" style="margin-top:var(--space-4);">Service Type
+        <button type="button" id="serviceInfoToggle" style="background:none;border:none;padding:0 4px;cursor:pointer;vertical-align:middle;color:var(--color-muted);" title="What's the difference?">
+            <i class="fa-solid fa-circle-info"></i>
+        </button>
+    </label>
+    <div id="serviceInfoBox" style="display:none;background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--space-3);margin-bottom:var(--space-3);font-size:0.84rem;line-height:1.55;">
+        <p style="margin:0 0 var(--space-2);"><i class="fa-solid fa-box-open" style="width:18px;"></i> <strong>Self Drop-off</strong> — you bring your items to our storage location yourself, within the allowed drop-off period. <?php if ($locationMapsUrl = Settings::get('location_maps_url')): ?><a href="<?= e($locationMapsUrl) ?>" target="_blank" rel="noopener">View location <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.7rem;"></i></a><?php endif; ?></p>
+        <p style="margin:0;"><i class="fa-solid fa-truck" style="width:18px;"></i> <strong>Team Pickup</strong> — our team comes to you and collects your items. An extra charge applies based on distance and labour — confirmed by admin before finalising.</p>
+    </div>
     <div class="grid-2">
         <label class="radio-card">
             <input type="radio" name="jenis_servis" value="dropoff" <?= ($_POST['jenis_servis'] ?? '') === 'dropoff' ? 'checked' : '' ?> required>
-            <i class="fa-solid fa-box-open"></i> Self Drop-off
+            <div>
+                <span style="font-weight:700;"><i class="fa-solid fa-box-open"></i> Self Drop-off</span>
+                <small style="display:block;font-weight:400;color:var(--color-muted);margin-top:2px;font-size:0.75rem;">You bring items to us</small>
+            </div>
         </label>
         <label class="radio-card">
             <input type="radio" name="jenis_servis" value="pickup" <?= ($_POST['jenis_servis'] ?? '') === 'pickup' ? 'checked' : '' ?> required>
-            <i class="fa-solid fa-truck"></i> Team Pickup
+            <div>
+                <span style="font-weight:700;"><i class="fa-solid fa-truck"></i> Team Pickup</span>
+                <small style="display:block;font-weight:400;color:var(--color-muted);margin-top:2px;font-size:0.75rem;">We collect from you (extra charge)</small>
+            </div>
         </label>
     </div>
 
@@ -375,6 +389,17 @@ function updateTarikhOptions() {
 }
 servisRadios.forEach(r => r.addEventListener('change', updateTarikhOptions));
 updateTarikhOptions();
+
+// Service type info toggle
+const toggleBtn = document.getElementById('serviceInfoToggle');
+const infoBox = document.getElementById('serviceInfoBox');
+if (toggleBtn && infoBox) {
+    toggleBtn.addEventListener('click', () => {
+        const open = infoBox.style.display !== 'none';
+        infoBox.style.display = open ? 'none' : 'block';
+        toggleBtn.querySelector('i').style.color = open ? 'var(--color-muted)' : 'var(--color-primary)';
+    });
+}
 
 // Smooth scroll for info links
 document.querySelectorAll('.info-scroll-link').forEach(link => {
