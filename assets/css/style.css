@@ -459,6 +459,8 @@ tbody tr:hover td { background: var(--color-bg); }
     z-index: 10;
 }
 .admin-topbar strong { font-size: 1.05rem; }
+.admin-topbar-actions { display: flex; align-items: center; gap: var(--space-3); }
+.admin-mobile-logout { display: none; }
 
 @media (max-width: 800px) {
     .admin-layout { flex-direction: column; padding-bottom: 64px; }
@@ -488,6 +490,21 @@ tbody tr:hover td { background: var(--color-bg); }
     .admin-sidebar a.active { background: none; color: var(--color-primary); }
 
     .admin-topbar { padding: var(--space-3) var(--space-4); }
+    .admin-topbar-actions { gap: var(--space-2); }
+    .admin-mobile-logout {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--color-primary);
+        color: #fff;
+        border-radius: var(--radius-sm);
+        padding: 8px 10px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .admin-mobile-logout:hover { text-decoration: none; color: #fff; background: var(--color-primary-dark); }
 }
 
 .filter-bar { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); align-items: center; }

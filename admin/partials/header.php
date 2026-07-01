@@ -55,7 +55,13 @@ function nav_active(string $file, string $current): string
     <div class="admin-main">
         <div class="admin-topbar">
             <strong><?= e($pageTitle ?? '') ?></strong>
-            <span class="muted"><?= e(AdminAuth::username() ?? '') ?></span>
+            <div class="admin-topbar-actions">
+                <span class="muted"><?= e(AdminAuth::username() ?? '') ?></span>
+                <a class="admin-mobile-logout" href="logout.php" aria-label="Log out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
         </div>
         <div class="container-wide">
         <?php if ($msg = flash_get('error')): ?>
