@@ -29,22 +29,22 @@ require __DIR__ . '/partials/header.php';
 
 <div style="text-align:center;margin-bottom:var(--space-5);">
     <img src="<?= asset('images/favicon.png') ?>" alt="" style="width:52px;height:52px;border-radius:var(--radius-md);margin:0 auto var(--space-3);">
-    <h1 style="margin-bottom:var(--space-1);">My Storage</h1>
-    <p class="muted" style="margin:0;">Track your items — anytime, anywhere.</p>
+    <h1 style="margin-bottom:var(--space-1);">Log In to My Storage</h1>
+    <p class="muted" style="margin:0;">Enter your phone number and PIN to track your booking.</p>
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2);margin-bottom:var(--space-5);">
-    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);text-align:center;">
-        <i class="fa-solid fa-warehouse" style="color:var(--color-primary);font-size:1.2rem;display:block;margin-bottom:4px;"></i>
-        <span style="font-size:0.72rem;font-weight:600;color:var(--color-text);">Check Status</span>
+    <div style="background:transparent;border:0;padding:var(--space-2);text-align:center;">
+        <i class="fa-solid fa-warehouse" style="color:var(--color-primary);font-size:1rem;display:block;margin-bottom:5px;"></i>
+        <span style="font-size:0.72rem;font-weight:700;color:var(--color-text);">Track Status</span>
     </div>
-    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);text-align:center;">
-        <i class="fa-solid fa-camera" style="color:var(--color-primary);font-size:1.2rem;display:block;margin-bottom:4px;"></i>
-        <span style="font-size:0.72rem;font-weight:600;color:var(--color-text);">View Photos</span>
+    <div style="background:transparent;border:0;padding:var(--space-2);text-align:center;">
+        <i class="fa-solid fa-camera" style="color:var(--color-primary);font-size:1rem;display:block;margin-bottom:5px;"></i>
+        <span style="font-size:0.72rem;font-weight:700;color:var(--color-text);">View Updates</span>
     </div>
-    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);text-align:center;">
-        <i class="fa-solid fa-receipt" style="color:var(--color-primary);font-size:1.2rem;display:block;margin-bottom:4px;"></i>
-        <span style="font-size:0.72rem;font-weight:600;color:var(--color-text);">Get Slip</span>
+    <div style="background:transparent;border:0;padding:var(--space-2);text-align:center;">
+        <i class="fa-solid fa-receipt" style="color:var(--color-primary);font-size:1rem;display:block;margin-bottom:5px;"></i>
+        <span style="font-size:0.72rem;font-weight:700;color:var(--color-text);">Download Slip</span>
     </div>
 </div>
 

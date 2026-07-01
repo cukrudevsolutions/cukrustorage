@@ -189,8 +189,9 @@ require __DIR__ . '/partials/header.php';
     <p style="color:#fff;font-weight:800;font-size:0.95rem;letter-spacing:-0.01em;margin:0 0 var(--space-2);">WhatsApp First, Then Fill This Form</p>
     <p style="color:#94a3b8;font-size:0.82rem;margin:0 0 var(--space-4);line-height:1.5;">This form is for <span style="color:#e2e8f0;font-weight:600;">record purposes only.</span> Confirm pricing &amp; box count on WhatsApp before submitting.</p>
     <a href="<?= e($waEnquiryUrl) ?>" target="_blank" rel="noopener"
-       style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;font-weight:700;font-size:0.88rem;padding:10px 18px;border-radius:var(--radius-sm);text-decoration:none;">
-        <svg viewBox="0 0 32 32" style="width:16px;height:16px;"><circle cx="16" cy="16" r="16" fill="rgba(255,255,255,0.2)"/><path fill="#fff" d="M22.7 9.3a8.9 8.9 0 0 0-14 10.7L7 25l5.2-1.6a8.9 8.9 0 0 0 12.6-8 8.8 8.8 0 0 0-2.1-6.1zm-6.6 13.6a7.4 7.4 0 0 1-3.8-1l-.3-.2-2.8.9.9-2.7-.2-.3a7.4 7.4 0 1 1 13.8-3.7 7.4 7.4 0 0 1-7.6 7zm4-5.5c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4c-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.1 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.7 2.6 4 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.4-.2z"/></svg>
+       style="display:inline-flex;align-items:center;gap:9px;background:#25D366;color:#fff;font-weight:800;font-size:0.95rem;padding:11px 20px;border-radius:var(--radius-sm);text-decoration:none;">
+        <svg viewBox="0 0 32 32" style="width:19px;height:19px;flex-shrink:0;"><path fill="#fff" d="M22.7 9.3a8.9 8.9 0 0 0-14 10.7L7 25l5.2-1.6a8.9 8.9 0 0 0 12.6-8 8.8 8.8 0 0 0-2.1-6.1zm-6.6 13.6a7.4 7.4 0 0 1-3.8-1l-.3-.2-2.8.9.9-2.7-.2-.3a7.4 7.4 0 1 1 13.8-3.7 7.4 7.4 0 0 1-7.6 7zm4-5.5c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4c-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.1 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.7 2.6 4 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.4-.2z"/>
+        </svg>
         Chat with Us on WhatsApp
     </a>
 </div>
