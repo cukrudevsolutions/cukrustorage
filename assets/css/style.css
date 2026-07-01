@@ -333,23 +333,33 @@ input[readonly] {
 .radio-card input { width: auto; accent-color: var(--color-primary); margin: 0; }
 
 /* ---------- Buttons ---------- */
-.btn {
+.btn,
+button,
+input[type=button],
+input[type=submit],
+input[type=reset] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: background .15s ease, transform .05s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+button::-moz-focus-inner { border: 0; }
+
+.btn {
     background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
     color: #fff;
-    border: none;
     padding: 13px 20px;
     min-height: 46px;
     border-radius: var(--radius-sm);
     font-size: 0.95rem;
     font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
     text-align: center;
-    transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
     box-shadow: 0 14px 32px rgba(79, 70, 229, 0.14);
 }
 .btn:hover { background: linear-gradient(135deg, var(--color-primary-dark), #3c3bbe); text-decoration: none; }
@@ -357,12 +367,38 @@ input[readonly] {
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-block { width: 100%; }
-.btn-secondary { background: #fff; color: var(--color-text); border: 1.5px solid var(--color-border); box-shadow: none; }
-.btn-secondary:hover { background: var(--color-bg); border-color: #cbd5e1; }
+.btn-secondary {
+    background: #fff;
+    color: var(--color-text);
+    border: 1.5px solid var(--color-border);
+    box-shadow: none;
+}
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
 .btn-danger { background: var(--color-danger); }
 .btn-danger:hover { background: #b91c1c; }
-.btn-sm { padding: 8px 14px; min-height: 36px; font-size: 0.82rem; border-radius: var(--radius-sm); }
-.btn-link { background: none; color: var(--color-primary); box-shadow: none; padding: 4px 0; min-height: 0; font-weight: 600; }
+.btn-sm {
+    padding: 10px 14px;
+    min-height: 40px;
+    font-size: 0.86rem;
+    border-radius: calc(var(--radius-sm) - 2px);
+}
+.btn-icon {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    padding: 0;
+}
+.btn-link {
+    background: none;
+    color: var(--color-primary);
+    box-shadow: none;
+    padding: 4px 0;
+    min-height: 0;
+    font-weight: 600;
+}
 .btn-link:hover { background: none; text-decoration: underline; }
 
 /* ---------- Alerts ---------- */
