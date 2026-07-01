@@ -232,7 +232,6 @@ require __DIR__ . '/partials/header.php';
             <?php if (!$existingBooking): ?>
             <div id="phone-status" style="display:none;margin-top:6px;font-size:0.8rem;align-items:center;gap:6px;"></div>
             <?php endif; ?>
-            <p class="field-hint">Used to log in and check your status.</p>
         </div>
         <div>
             <label class="required" for="email">Email</label>
