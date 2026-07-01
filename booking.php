@@ -193,10 +193,10 @@ require __DIR__ . '/partials/header.php';
     <hr class="section-divider">
     <h3 class="eyebrow" style="margin-bottom:var(--space-3);" id="section-service-type">Self Drop-off vs Team Pickup</h3>
     <p style="margin:0 0 var(--space-2);font-size:0.88rem;"><strong>Self drop-off:</strong> you deliver your items yourself to our location within the period stated above.</p>
-    <p style="margin:0;font-size:0.88rem;"><strong>Team pickup:</strong> our team comes to collect your items directly from your address (distance + labour charges will be confirmed by the admin after booking).</p>
     <?php if ($locationMapsUrl = Settings::get('location_maps_url')): ?>
-        <a class="btn btn-sm btn-secondary" style="margin-top:var(--space-3);" href="<?= e($locationMapsUrl) ?>" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot"></i> View Drop-off Location on Google Maps</a>
+        <a class="btn btn-sm btn-secondary" style="margin-bottom:var(--space-3);" href="<?= e($locationMapsUrl) ?>" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot"></i> View Drop-off Location on Google Maps</a>
     <?php endif; ?>
+    <p style="margin:0;font-size:0.88rem;"><strong>Team pickup:</strong> our team comes to collect your items directly from your address (distance + labour charges will be confirmed by the admin after booking).</p>
 </div>
 
 <?php if (!empty($errors)): ?>
