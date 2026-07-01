@@ -394,7 +394,11 @@ document.querySelectorAll('.info-scroll-link').forEach(link => {
     link.addEventListener('click', e => {
         e.preventDefault();
         const target = document.querySelector(link.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (target) {
+            const headerH = document.querySelector('.topbar')?.offsetHeight ?? 0;
+            const top = target.getBoundingClientRect().top + window.scrollY - headerH - 12;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
     });
 });
 
