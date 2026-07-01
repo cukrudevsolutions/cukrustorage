@@ -30,9 +30,19 @@ function base_path(): string
     return $base;
 }
 
-function asset(string $path): string
+function asset(string $path, bool $versioned = false): string
 {
-    return base_path() . '/assets/' . ltrim($path, '/');
+    $assetUrl = base_path() . '/assets/' . ltrim($path, '/');
+    if (!$versioned) {
+        return $assetUrl;
+    }
+
+    $realPath = __DIR__ . '/../assets/' . ltrim($path, '/');
+    if (file_exists($realPath)) {
+        return $assetUrl . '?v=' . filemtime($realPath);
+    }
+
+    return $assetUrl;
 }
 
 function flash_set(string $key, string $message): void

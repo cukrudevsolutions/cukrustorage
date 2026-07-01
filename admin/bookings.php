@@ -59,8 +59,8 @@ require __DIR__ . '/partials/header.php';
             <tr>
                 <td><a href="booking-detail.php?id=<?= (int) $b['id'] ?>" class="btn-link" style="font-weight:700;"><?= e($b['booking_ref']) ?></a></td>
                 <td>
-                    <a href="booking-detail.php?id=<?= (int) $b['id'] ?>" class="btn-link"><?= e($b['nama']) ?></a>
-                    <div class="field-hint" style="margin-top:4px;font-size:0.75rem;color:var(--color-muted);">Admin view only</div>
+                    <a href="owner-view.php?id=<?= (int) $b['id'] ?>" class="btn-link"><?= e($b['nama']) ?></a>
+                    <div class="field-hint" style="margin-top:4px;font-size:0.75rem;color:var(--color-muted);">Admin preview of owner view</div>
                 </td>
                 <td><?= e(format_phone($b['no_telefon'])) ?></td>
                 <td><?= (int) $b['bilangan_kotak'] ?></td>

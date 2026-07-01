@@ -29,7 +29,7 @@ function nav_active(string $file, string $current): string
 <link rel="apple-touch-icon" href="../assets/images/icon-192.png">
 <link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="<?= asset('css/style.css', true) ?>">
 </head>
 <body>
 <div class="admin-layout">

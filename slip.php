@@ -36,9 +36,9 @@ $servisLabel = $booking['jenis_servis'] === 'pickup' ? 'Pickup by Our Team' : 'S
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Booking Confirmation Slip <?= e($booking['booking_ref']) ?> - <?= e($siteName) ?></title>
-<link rel="icon" type="image/png" href="assets/images/favicon.png">
+<link rel="icon" type="image/png" href="<?= asset('images/favicon.png') ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="<?= asset('css/style.css', true) ?>">
 <style>
     .slip-wrap { max-width: 980px; }
     .slip-doc { padding: var(--space-6); }
