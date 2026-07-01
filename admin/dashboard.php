@@ -11,11 +11,28 @@ BookingRepository::syncOverdueStatuses();
 
 $pdo = Database::pdo();
 $counts = [];
-foreach (['pending_approval', 'approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'] as $status) {
+$statuses = ['pending_approval', 'approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'];
+foreach ($statuses as $status) {
     $stmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE status = ?');
     $stmt->execute([$status]);
     $counts[$status] = (int) $stmt->fetchColumn();
 }
+
+$totalBookings = array_sum($counts);
+$totals = [];
+$stmt = $pdo->query("SELECT status, SUM(COALESCE(harga_total, harga_storage + COALESCE(harga_pickup, 0))) AS total_amount FROM bookings GROUP BY status");
+while ($row = $stmt->fetch()) {
+    $totals[$row['status']] = (float) $row['total_amount'];
+}
+
+$allTotal = array_sum($totals);
+$confirmedTotal = 0.0;
+foreach (['approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'] as $status) {
+    $confirmedTotal += $totals[$status] ?? 0.0;
+}
+$pendingTotal = $totals['pending_approval'] ?? 0.0;
+$inStorageTotal = $totals['in_storage'] ?? 0.0;
+$allTotal = max($allTotal, $confirmedTotal + $pendingTotal);
 
 $pending = BookingRepository::listFiltered('pending_approval', null, 1, 10);
 
@@ -32,7 +49,31 @@ require __DIR__ . '/partials/header.php';
     </div>
 <?php endif; ?>
 
-<div class="stats-grid">
+<div class="rev-grid">
+    <div class="card stat-card">
+        <div class="stat-num"><?= $totalBookings ?></div>
+        <div class="muted">Total Bookings</div>
+        <p class="field-hint">All bookings recorded in the system.</p>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-num"><?= rm($allTotal) ?></div>
+        <div class="muted">All Booking Value</div>
+        <p class="field-hint">Sum of all booking values, including pending and confirmed.</p>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-num"><?= rm($confirmedTotal) ?></div>
+        <div class="muted">Confirmed Revenue</div>
+        <p class="field-hint">Revenue from approved/in-storage/returned bookings.</p>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-num"><?= rm($pendingTotal) ?></div>
+        <div class="muted">Pending Approval</div>
+        <p class="field-hint">Value waiting for admin approval.</p>
+    </div>
+</div>
+
+<div class="dashboard-graph card">
+    <h2>Booking Status Breakdown</h2>
     <?php
     $labels = [
         'pending_approval' => 'Pending Approval',
@@ -43,11 +84,13 @@ require __DIR__ . '/partials/header.php';
         'overdue' => 'Overdue',
     ];
     foreach ($labels as $key => $label):
+        $value = $counts[$key] ?? 0;
+        $percent = $totalBookings ? round($value / $totalBookings * 100) : 0;
     ?>
-    <a href="bookings.php?status=<?= $key ?>" class="card stat-card" style="display:block;">
-        <div class="stat-num"><?= $counts[$key] ?></div>
-        <div class="muted"><?= e($label) ?></div>
-    </a>
+    <div class="graph-row">
+        <div class="graph-label"><span><?= e($label) ?></span><span><?= $value ?> (<?= $percent ?>%)</span></div>
+        <div class="graph-bar"><div class="graph-fill status-<?= e($key) ?>" style="width:<?= $percent ?>%"></div></div>
+    </div>
     <?php endforeach; ?>
 </div>
 

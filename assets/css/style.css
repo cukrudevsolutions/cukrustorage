@@ -494,6 +494,20 @@ tbody tr:hover td { background: var(--color-bg); }
 .stat-card .stat-num { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
 .stat-card .muted { margin-bottom: var(--space-2); }
 
+.rev-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-5); }
+.dashboard-graph { padding: var(--space-5); margin-bottom: var(--space-5); }
+.dashboard-graph h2 { margin-top: 0; margin-bottom: var(--space-4); font-size: 1rem; }
+.graph-row { margin-bottom: var(--space-4); }
+.graph-label { display: flex; justify-content: space-between; gap: var(--space-3); font-size: 0.9rem; color: var(--color-muted); margin-bottom: 0.5rem; }
+.graph-bar { background: rgba(226, 232, 240, 0.9); border-radius: var(--radius-full); height: 16px; overflow: hidden; }
+.graph-fill { height: 100%; border-radius: var(--radius-full); min-width: 2%; }
+.graph-fill.status-pending_approval { background: #f59e0b; }
+.graph-fill.status-approved { background: #2563eb; }
+.graph-fill.status-in_storage { background: #7c3aed; }
+.graph-fill.status-ready_for_return { background: #10b981; }
+.graph-fill.status-returned { background: #334155; }
+.graph-fill.status-overdue { background: #dc2626; }
+
 .empty-state { text-align: center; padding: var(--space-8) var(--space-4); color: var(--color-muted); }
 .empty-state .icon { font-size: 2rem; margin-bottom: var(--space-2); }
 
