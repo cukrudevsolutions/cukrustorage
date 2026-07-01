@@ -18,9 +18,16 @@ function nav_active(string $file, string $current): string
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="CS Admin">
 <title><?= e($pageTitle ?? 'Admin') ?> - Admin <?= e($siteName) ?></title>
 <link rel="icon" type="image/png" href="../assets/images/favicon.png">
+<link rel="apple-touch-icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -37,6 +44,7 @@ function nav_active(string $file, string $current): string
                 <?php if ($pendingCount > 0): ?><span class="notif-badge"><?= $pendingCount ?></span><?php endif; ?>
             </a>
             <a href="bookings.php" class="<?= nav_active('bookings.php', $current) ?>"><span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>Bookings</a>
+            <a href="pickups.php" class="<?= nav_active('pickups.php', $current) ?>"><span class="icon"><i class="fa-solid fa-truck"></i></span>Pickups</a>
             <a href="scan.php" class="<?= nav_active('scan.php', $current) ?>"><span class="icon"><i class="fa-solid fa-qrcode"></i></span>Scan</a>
             <a href="settings.php" class="<?= nav_active('settings.php', $current) ?>"><span class="icon"><i class="fa-solid fa-gear"></i></span>Settings</a>
         </nav>

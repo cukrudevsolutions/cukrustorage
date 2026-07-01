@@ -1,5 +1,10 @@
         </div>
     </div>
 </div>
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../sw.js');
+}
+</script>
 </body>
 </html>

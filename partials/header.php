@@ -16,9 +16,16 @@ function owner_nav_active(string $file, string $current): string
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="<?= e($siteName) ?>">
 <title><?= e($pageTitle ?? $siteName) ?> - <?= e($siteName) ?></title>
 <link rel="icon" type="image/png" href="<?= asset('images/favicon.png') ?>">
+<link rel="apple-touch-icon" href="<?= asset('images/icon-192.png') ?>">
+<link rel="manifest" href="<?= base_path() ?>/manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
 <?= $extraHead ?? '' ?>
