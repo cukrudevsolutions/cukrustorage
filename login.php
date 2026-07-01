@@ -27,9 +27,26 @@ $pageTitle = 'Log In';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<div class="auth-icon"><i class="fa-solid fa-key"></i></div>
-<h1 style="text-align:center;">Log In</h1>
-<p class="muted" style="text-align:center;margin-bottom:var(--space-5);">Use the phone number &amp; PIN you registered during booking.</p>
+<div style="text-align:center;margin-bottom:var(--space-5);">
+    <img src="<?= asset('images/favicon.png') ?>" alt="" style="width:52px;height:52px;border-radius:var(--radius-md);margin:0 auto var(--space-3);">
+    <h1 style="margin-bottom:var(--space-1);">My Storage</h1>
+    <p class="muted" style="margin:0;">Track your items — anytime, anywhere.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2);margin-bottom:var(--space-5);">
+    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);text-align:center;">
+        <i class="fa-solid fa-warehouse" style="color:var(--color-primary);font-size:1.2rem;display:block;margin-bottom:4px;"></i>
+        <span style="font-size:0.72rem;font-weight:600;color:var(--color-text);">Check Status</span>
+    </div>
+    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);text-align:center;">
+        <i class="fa-solid fa-camera" style="color:var(--color-primary);font-size:1.2rem;display:block;margin-bottom:4px;"></i>
+        <span style="font-size:0.72rem;font-weight:600;color:var(--color-text);">View Photos</span>
+    </div>
+    <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);text-align:center;">
+        <i class="fa-solid fa-receipt" style="color:var(--color-primary);font-size:1.2rem;display:block;margin-bottom:4px;"></i>
+        <span style="font-size:0.72rem;font-weight:600;color:var(--color-text);">Get Slip</span>
+    </div>
+</div>
 
 <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
 
@@ -42,8 +59,9 @@ require __DIR__ . '/partials/header.php';
     <input type="password" inputmode="numeric" pattern="\d*" id="pin" name="pin" maxlength="6" required autocomplete="current-password">
 
     <button type="submit" class="btn btn-block" style="margin-top:var(--space-5);">Log In</button>
-    <p class="muted" style="text-align:center;margin-top:var(--space-4);margin-bottom:0;">
-        Forgot your PIN? Please contact the admin for a reset.
+    <p class="muted" style="text-align:center;margin-top:var(--space-4);margin-bottom:0;font-size:0.8rem;">
+        Use the phone number &amp; PIN from your booking registration.<br>
+        Forgot your PIN? Contact admin to reset.
     </p>
 </form>
 
