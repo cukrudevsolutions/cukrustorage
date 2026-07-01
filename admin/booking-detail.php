@@ -26,6 +26,7 @@ $updatableStatuses = [
     'ready_for_return' => 'Ready for Return (READY_FOR_RETURN)',
     'returned' => 'Returned (RETURNED)',
     'overdue' => 'Overdue',
+    'cancelled' => 'Cancelled',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -94,12 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('admin/booking-detail.php?id=' . $id);
     }
 
-    if ($action === 'update_status' && $booking['status'] !== 'pending_approval') {
+    if ($action === 'update_status' && $booking['status'] !== 'returned') {
         $newStatus = $_POST['new_status'] ?? '';
         $notes = trim($_POST['notes'] ?? '') ?: null;
 
         if (!array_key_exists($newStatus, $updatableStatuses)) {
             flash_set('error', 'Invalid status.');
+        } elseif ($newStatus === 'cancelled' && $notes === null) {
+            flash_set('error', 'Please provide a reason for cancellation.');
         } else {
             $isFirstTimeInStorage = $booking['status'] === 'approved' && $newStatus === 'in_storage';
             BookingRepository::updateStatus($id, $newStatus, AdminAuth::username(), $notes);
@@ -195,10 +198,10 @@ require __DIR__ . '/partials/header.php';
 <?php
 // Status action buttons
 $statusActions = [
-    'approved'        => [['status'=>'in_storage','label'=>'Items Received — In Storage','icon'=>'fa-warehouse','desc'=>'Tap when you have received the customer\'s items.','primary'=>true]],
-    'in_storage'      => [['status'=>'ready_for_return','label'=>'Ready to Collect','icon'=>'fa-bell','desc'=>'Items are ready — notify the customer to come collect.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
-    'ready_for_return'=> [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has collected. This booking is now closed.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
-    'overdue'         => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has finally collected their items.','primary'=>true]],
+    'approved'        => [['status'=>'in_storage','label'=>'Items Received — In Storage','icon'=>'fa-warehouse','desc'=>'Tap when you have received the customer\'s items.','primary'=>true], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
+    'in_storage'      => [['status'=>'ready_for_return','label'=>'Ready to Collect','icon'=>'fa-bell','desc'=>'Items are ready — notify the customer to come collect.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
+    'ready_for_return'=> [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has collected. This booking is now closed.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
+    'overdue'         => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has finally collected their items.','primary'=>true], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
     'returned'        => [],
 ];
 $nextActions = $statusActions[$booking['status']] ?? [];
@@ -244,6 +247,7 @@ $nextActions = $statusActions[$booking['status']] ?? [];
         <?= Csrf::field() ?>
         <input type="hidden" name="action" value="update_status">
         <input type="hidden" name="new_status" value="<?= e($act['status']) ?>">
+        <input type="hidden" name="notes" value="<?= e($act['status'] === 'cancelled' ? 'Cancelled by admin' : '') ?>">
         <button type="submit" class="status-action-btn <?= $act['primary'] ? 'status-action-primary' : 'status-action-secondary' ?>"
             onclick="return confirm('Mark as: <?= e($act['label']) ?>?')">
             <i class="fa-solid <?= e($act['icon']) ?> status-action-icon"></i>
@@ -251,6 +255,17 @@ $nextActions = $statusActions[$booking['status']] ?? [];
         </button>
     </form>
     <?php endforeach; ?>
+    <div class="card" style="padding:var(--space-4);margin-top:var(--space-3);background:rgba(239,246,255,0.8);border:1px solid rgba(59,130,246,0.15);">
+        <h3 style="margin:0 0 var(--space-3);font-size:1rem;">Cancel Booking with Reason</h3>
+        <form method="post">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="action" value="update_status">
+            <input type="hidden" name="new_status" value="cancelled">
+            <label for="cancel_reason" style="display:block;font-weight:600;margin-bottom:var(--space-2);">Reason for cancellation</label>
+            <textarea id="cancel_reason" name="notes" rows="3" required style="width:100%;padding:14px 16px;border:1px solid var(--color-border);border-radius:calc(var(--radius-sm) + 2px);font-family:inherit;"><?php if ($booking['status'] === 'cancelled') echo e($booking['notes'] ?? ''); ?></textarea>
+            <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);" onclick="return confirm('Cancel this booking?')"><i class="fa-solid fa-ban"></i> Cancel Booking</button>
+        </form>
+    </div>
     <details style="margin-top:var(--space-1);">
         <summary style="font-size:0.8rem;color:var(--color-muted);cursor:pointer;padding:var(--space-2) 0;"><i class="fa-solid fa-chevron-right" style="font-size:0.6rem;margin-right:4px;"></i> Custom status / add note</summary>
         <form method="post" style="margin-top:var(--space-3);">
