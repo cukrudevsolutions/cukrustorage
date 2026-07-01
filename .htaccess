@@ -7,8 +7,8 @@ ServerSignature Off
     Header set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# Sekat akses terus ke fail .env jika tersilap termuat naik ke sini
-<FilesMatch "^\.env">
+# Block direct web access to .env and sensitive root files
+<FilesMatch "^(\.env|composer\.json|composer\.lock)">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -17,6 +17,13 @@ ServerSignature Off
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# Block direct web access to backend/private directories
+# (each also has its own .htaccess as defense-in-depth)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(config|src|vendor|database|bin)(/|$) - [F,L]
+</IfModule>
 
 <IfModule mod_php8.c>
     php_flag display_errors off

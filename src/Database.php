@@ -30,7 +30,7 @@ final class Database
             } catch (PDOException $e) {
                 error_log('DB connection failed: ' . $e->getMessage());
                 http_response_code(500);
-                exit('Ralat sistem. Sila cuba sebentar lagi.');
+                exit('System error. Please try again shortly.');
             }
         }
 

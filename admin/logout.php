@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../config/config.php';
 
-use Cukru\OwnerAuth;
+use Cukru\AdminAuth;
 
-OwnerAuth::logout();
-redirect('login.php');
+AdminAuth::logout();
+redirect('admin/login.php');
