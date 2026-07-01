@@ -13,7 +13,6 @@ $windows = [
     [Settings::get('window1_start'), Settings::get('window1_end')],
     [Settings::get('window2_start'), Settings::get('window2_end')],
 ];
-$pickupMinAdvance = Settings::getInt('pickup_min_advance_days', 1);
 
 $errors = [];
 
@@ -42,10 +41,9 @@ function format_booking_date(DateTime $d): string
 }
 
 /** List every individual date (from today onward) within any allowed window. */
-function build_date_options(array $windows, int $pickupMinAdvance): array
+function build_date_options(array $windows): array
 {
     $today = new DateTime('today');
-    $pickupMinDate = (clone $today)->modify("+{$pickupMinAdvance} day");
     $options = [];
 
     foreach ($windows as [$start, $end]) {
@@ -59,7 +57,6 @@ function build_date_options(array $windows, int $pickupMinAdvance): array
                 $options[] = [
                     'value' => $cursor->format('Y-m-d'),
                     'label' => format_booking_date($cursor),
-                    'pickupOk' => $cursor >= $pickupMinDate,
                 ];
             }
             $cursor->modify('+1 day');
@@ -69,7 +66,7 @@ function build_date_options(array $windows, int $pickupMinAdvance): array
     return $options;
 }
 
-$dateOptions = build_date_options($windows, $pickupMinAdvance);
+$dateOptions = build_date_options($windows);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
@@ -137,12 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         if (!date_in_any_window($tarikhDicadang, $windows)) {
             $errors[] = 'The proposed date must fall within an allowed drop-off/pickup period (see dates above the form).';
-        }
-        if ($jenisServis === 'pickup') {
-            $minDate = (new DateTime('today'))->modify("+{$pickupMinAdvance} day")->format('Y-m-d');
-            if ($tarikhDicadang < $minDate) {
-                $errors[] = "Pickup requests must be made at least {$pickupMinAdvance} day(s) before the pickup date.";
-            }
         }
     }
 
@@ -304,7 +295,7 @@ require __DIR__ . '/partials/header.php';
     <select id="tarikh_dicadang" name="tarikh_dicadang" required>
         <option value="">- Select a date -</option>
         <?php foreach ($dateOptions as $opt): ?>
-            <option value="<?= e($opt['value']) ?>" data-pickup-ok="<?= $opt['pickupOk'] ? '1' : '0' ?>" <?= ($_POST['tarikh_dicadang'] ?? '') === $opt['value'] ? 'selected' : '' ?>><?= e($opt['label']) ?></option>
+            <option value="<?= e($opt['value']) ?>" <?= ($_POST['tarikh_dicadang'] ?? '') === $opt['value'] ? 'selected' : '' ?>><?= e($opt['label']) ?></option>
         <?php endforeach; ?>
     </select>
 
@@ -365,30 +356,8 @@ function togglePickupFields() {
 servisRadios.forEach(r => r.addEventListener('change', togglePickupFields));
 togglePickupFields();
 
-// Date dropdown - when Pickup is selected, hide dates that don't meet the minimum advance notice.
+// Date dropdown
 const tarikhSelect = document.getElementById('tarikh_dicadang');
-const tarikhOptions = Array.from(tarikhSelect.options).filter(o => o.value !== '');
-
-function updateTarikhOptions() {
-    const isPickup = document.querySelector('input[name=jenis_servis]:checked')?.value === 'pickup';
-    let selectedStillValid = true;
-
-    tarikhOptions.forEach(opt => {
-        const pickupOk = opt.dataset.pickupOk === '1';
-        const shouldDisable = isPickup && !pickupOk;
-        opt.disabled = shouldDisable;
-        opt.hidden = shouldDisable;
-        if (opt.value === tarikhSelect.value && shouldDisable) {
-            selectedStillValid = false;
-        }
-    });
-
-    if (!selectedStillValid) {
-        tarikhSelect.value = '';
-    }
-}
-servisRadios.forEach(r => r.addEventListener('change', updateTarikhOptions));
-updateTarikhOptions();
 
 // Service type info toggle
 const toggleBtn = document.getElementById('serviceInfoToggle');
