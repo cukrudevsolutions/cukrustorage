@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/config/config.php';
 
+use Cukru\AdminAuth;
 use Cukru\BookingRepository;
 use Cukru\OwnerAuth;
 
@@ -20,7 +21,10 @@ if (!$booking) {
     exit('Photo not found.');
 }
 
-if (!OwnerAuth::isLoggedIn() || !in_array((int) $booking['id'], OwnerAuth::bookingIds(), true)) {
+$hasOwnerAccess = OwnerAuth::isLoggedIn() && in_array((int) $booking['id'], OwnerAuth::bookingIds(), true);
+$hasAdminAccess = AdminAuth::isLoggedIn();
+
+if (!$hasOwnerAccess && !$hasAdminAccess) {
     http_response_code(403);
     exit('Access denied.');
 }
