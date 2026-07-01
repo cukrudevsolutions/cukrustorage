@@ -192,22 +192,47 @@ require __DIR__ . '/partials/header.php';
 
         <div class="photo-grid">
         <?php for ($n = 1; $n <= PhotoUpload::MAX_PHOTOS; $n++): $foto = $booking["foto_storan_{$n}"]; ?>
-            <div class="photo-slot">
+            <div class="photo-slot" id="slot-<?= $n ?>">
+                <label class="photo-tap-area" for="foto_<?= $n ?>">
+                    <?php if ($foto): ?>
+                        <img src="<?= e($foto) ?>" alt="Storage photo <?= $n ?>" class="photo-thumb">
+                    <?php else: ?>
+                        <div class="photo-slot-empty" id="slot-empty-<?= $n ?>">
+                            <i class="fa-solid fa-camera" style="font-size:1.6rem;color:var(--color-muted);"></i>
+                            <span style="font-size:0.72rem;color:var(--color-muted);margin-top:4px;">Tap to add</span>
+                        </div>
+                        <img src="" alt="" class="photo-thumb" id="slot-preview-<?= $n ?>" style="display:none;">
+                    <?php endif; ?>
+                </label>
+                <input type="file" id="foto_<?= $n ?>" name="foto_<?= $n ?>" accept="image/*" capture="environment" class="photo-file-input">
                 <?php if ($foto): ?>
-                    <a href="<?= e($foto) ?>" target="_blank"><img src="<?= e($foto) ?>" alt="Storage photo <?= $n ?>"></a>
                     <label class="remove-row">
-                        <input type="checkbox" name="remove_foto_<?= $n ?>"> Remove this photo
+                        <input type="checkbox" name="remove_foto_<?= $n ?>"> Remove
                     </label>
-                <?php else: ?>
-                    <div class="photo-slot-empty">Slot <?= $n ?> empty</div>
                 <?php endif; ?>
-                <input type="file" name="foto_<?= $n ?>" accept="image/*" capture="environment">
             </div>
         <?php endfor; ?>
         </div>
 
-        <button type="submit" class="btn btn-sm btn-secondary" style="margin-top:var(--space-4);">Save Storage Photos</button>
+        <button type="submit" class="btn btn-block" style="margin-top:var(--space-4);"><i class="fa-solid fa-floppy-disk"></i> Save Photos</button>
     </form>
+    <script>
+    document.querySelectorAll('.photo-file-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const n = this.id.replace('foto_', '');
+            const preview = document.getElementById('slot-preview-' + n);
+            const empty = document.getElementById('slot-empty-' + n);
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    if (preview) { preview.src = e.target.result; preview.style.display = 'block'; preview.className = 'photo-thumb'; }
+                    if (empty) empty.style.display = 'none';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    });
+    </script>
 </div>
 <?php endif; ?>
 
