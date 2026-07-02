@@ -425,7 +425,7 @@ $hasPriceSet = $booking['harga_total'] !== null;
             <?php endfor; ?>
         </div>
         <p class="field-hint" style="margin-top:var(--space-3);">Accepted formats: JPG, PNG, WEBP. Max size 10MB each.</p>
-        <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-cloud-arrow-up"></i> Save Photos</button>
+        <button type="submit" class="btn btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-cloud-arrow-up"></i> Save Photos</button>
     </form>
 </div>
 
