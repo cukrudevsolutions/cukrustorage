@@ -36,7 +36,10 @@ function nav_active(string $file, string $current): string
     <div class="admin-sidebar">
         <span class="brand">
             <img src="../assets/images/favicon.png" alt="" class="brand-logo">
-            <?= brand_name_html($siteName) ?> Admin
+            <span class="brand-text">
+                <?= brand_name_html($siteName) ?>
+                <small>Admin Panel</small>
+            </span>
         </span>
         <nav>
             <a href="dashboard.php" class="<?= nav_active('dashboard.php', $current) ?>">
@@ -44,8 +47,8 @@ function nav_active(string $file, string $current): string
                 <?php if ($pendingCount > 0): ?><span class="notif-badge"><?= $pendingCount ?></span><?php endif; ?>
             </a>
             <a href="bookings.php" class="<?= nav_active('bookings.php', $current) ?>"><span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>Bookings</a>
-            <a href="pickups.php" class="<?= nav_active('pickups.php', $current) ?>"><span class="icon"><i class="fa-solid fa-truck"></i></span>Pickups</a>
             <a href="scan.php" class="<?= nav_active('scan.php', $current) ?>"><span class="icon"><i class="fa-solid fa-qrcode"></i></span>Scan</a>
+            <a href="pickups.php" class="<?= nav_active('pickups.php', $current) ?>"><span class="icon"><i class="fa-solid fa-truck"></i></span>Pickups</a>
             <a href="settings.php" class="<?= nav_active('settings.php', $current) ?>"><span class="icon"><i class="fa-solid fa-gear"></i></span>Settings</a>
         </nav>
         <div class="sidebar-footer">

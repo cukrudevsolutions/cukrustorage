@@ -20,6 +20,12 @@ foreach ($statuses as $status) {
 
 $totalBookings = array_sum($counts);
 
+$boxesStmt = $pdo->prepare(
+    'SELECT COALESCE(SUM(bilangan_kotak), 0) FROM bookings WHERE status IN (' . implode(',', array_fill(0, count($statuses), '?')) . ')'
+);
+$boxesStmt->execute($statuses);
+$totalBoxes = (int) $boxesStmt->fetchColumn();
+
 // Revenue figures count storage charge only — pickup charge is a logistics
 // pass-through cost, not real revenue, so it's excluded here.
 $totals = [];
@@ -56,6 +62,11 @@ require __DIR__ . '/partials/header.php';
         <div class="stat-num"><?= $totalBookings ?></div>
         <div class="muted">Total Bookings</div>
         <p class="field-hint">All bookings recorded in the system.</p>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-num"><?= $totalBoxes ?></div>
+        <div class="muted">Total Boxes</div>
+        <p class="field-hint">Total boxes across all bookings.</p>
     </div>
     <div class="card stat-card">
         <div class="stat-num"><?= rm($pendingTotal) ?></div>

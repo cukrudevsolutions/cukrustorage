@@ -56,7 +56,7 @@ a {
     text-decoration: none;
     transition: color .15s ease;
 }
-a:hover {
+a:hover:not(.btn) {
     color: var(--color-primary-dark);
     text-decoration: underline;
 }
@@ -598,25 +598,53 @@ tbody tr:hover td { background: var(--color-bg); }
     color: #cbd5e1;
     padding: var(--space-5) var(--space-3);
     flex-shrink: 0;
+    overflow: hidden;
 }
-.admin-sidebar .brand { color: #fff; font-weight: 800; padding: var(--space-2) var(--space-3) var(--space-5); display: flex; align-items: center; gap: var(--space-2); font-size: 1.05rem; letter-spacing: -0.01em; }
+.admin-sidebar .brand {
+    color: #fff;
+    font-weight: 800;
+    padding: var(--space-2) var(--space-3) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+}
+.admin-sidebar .brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-sidebar .brand-text small {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
 .admin-sidebar .brand .brand-accent { color: var(--color-brand-blue); }
-.admin-sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+.admin-sidebar nav { display: flex; flex-direction: column; gap: 3px; }
 .admin-sidebar a {
     display: flex;
     align-items: center;
     gap: var(--space-3);
     color: #94a3b8;
     text-decoration: none;
-    padding: 11px var(--space-3);
+    padding: 12px var(--space-3);
     border-radius: var(--radius-sm);
     font-size: 0.88rem;
     font-weight: 600;
 }
-.admin-sidebar a .icon { font-size: 1rem; width: 20px; text-align: center; }
+.admin-sidebar a .icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
 .admin-sidebar a:hover { background: #1e293b; color: #fff; text-decoration: none; }
-.admin-sidebar a.active { background: var(--color-primary); color: #fff; }
+.admin-sidebar a.active { background: var(--color-primary); color: #fff; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35); }
 .admin-sidebar .sidebar-footer { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid #1e293b; }
+.admin-sidebar .sidebar-footer a { color: #94a3b8; }
+.admin-sidebar .sidebar-footer a:hover { color: #fff; }
 
 .admin-main { flex: 1; min-width: 0; }
 .admin-topbar {

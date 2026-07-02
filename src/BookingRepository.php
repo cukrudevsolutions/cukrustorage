@@ -216,8 +216,10 @@ final class BookingRepository
             $params['status'] = $status;
         }
         if ($search) {
-            $where[] = '(nama LIKE :search OR no_telefon LIKE :search OR booking_ref LIKE :search)';
-            $params['search'] = '%' . $search . '%';
+            $where[] = '(nama LIKE :search1 OR no_telefon LIKE :search2 OR booking_ref LIKE :search3)';
+            $params['search1'] = '%' . $search . '%';
+            $params['search2'] = '%' . $search . '%';
+            $params['search3'] = '%' . $search . '%';
         }
 
         $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';

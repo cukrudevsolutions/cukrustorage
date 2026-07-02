@@ -287,7 +287,7 @@ $nextActions = $statusActions[$booking['status']] ?? [];
         </form>
     </div>
     <details style="margin-top:var(--space-1);">
-        <summary style="font-size:0.8rem;color:var(--color-muted);cursor:pointer;padding:var(--space-2) 0;"><i class="fa-solid fa-chevron-right" style="font-size:0.6rem;margin-right:4px;"></i> Custom status / add note</summary>
+        <summary style="font-size:0.8rem;color:var(--color-muted);cursor:pointer;padding:var(--space-2) 0;">Custom status / add note</summary>
         <form method="post" style="margin-top:var(--space-3);">
             <?= Csrf::field() ?>
             <input type="hidden" name="action" value="update_status">
@@ -361,7 +361,7 @@ $hasPriceSet = $booking['harga_total'] !== null;
                 <input type="number" step="0.01" min="0" id="edit_harga_pickup" name="harga_pickup" value="<?= e((string) $booking['harga_pickup']) ?>">
             <?php endif; ?>
         <?php endif; ?>
-        <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+        <button type="submit" class="btn btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
     </form>
     <?php if ($hasPriceSet): ?>
     <script>
