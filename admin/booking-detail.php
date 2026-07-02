@@ -405,6 +405,7 @@ $hasPriceSet = $booking['harga_total'] !== null;
                 <?php $photoValue = $booking['foto_storan_' . $n] ?? null; ?>
                 <div class="photo-slot">
                     <label class="photo-tap-area" for="foto_<?= $n ?>">
+                        <div id="photo-preview-<?= $n ?>">
                         <?php if (!empty($photoValue)): ?>
                             <img class="photo-thumb" src="<?= e($photoValue) ?>" alt="Storage photo <?= $n ?>">
                         <?php else: ?>
@@ -413,11 +414,12 @@ $hasPriceSet = $booking['harga_total'] !== null;
                                 <span style="margin-top:6px;font-size:0.8rem;color:var(--color-muted);">Add photo <?= $n ?></span>
                             </div>
                         <?php endif; ?>
+                        </div>
                     </label>
-                    <input class="photo-file-input" id="foto_<?= $n ?>" name="foto_<?= $n ?>" type="file" accept="image/*">
+                    <input class="photo-file-input" id="foto_<?= $n ?>" name="foto_<?= $n ?>" type="file" accept="image/*" data-slot="<?= $n ?>">
                     <?php if (!empty($photoValue)): ?>
                         <label class="remove-row">
-                            <input type="checkbox" name="remove_foto_<?= $n ?>" value="1">
+                            <input type="checkbox" id="remove_foto_<?= $n ?>" name="remove_foto_<?= $n ?>" value="1">
                             <span>Remove</span>
                         </label>
                     <?php endif; ?>
@@ -427,6 +429,21 @@ $hasPriceSet = $booking['harga_total'] !== null;
         <p class="field-hint" style="margin-top:var(--space-3);">Accepted formats: JPG, PNG, WEBP. Max size 10MB each.</p>
         <button type="submit" class="btn btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-cloud-arrow-up"></i> Save Photos</button>
     </form>
+    <script>
+    (function() {
+        document.querySelectorAll('.photo-file-input').forEach(function(input) {
+            input.addEventListener('change', function() {
+                if (!input.files || !input.files[0]) return;
+                var n = input.dataset.slot;
+                var preview = document.getElementById('photo-preview-' + n);
+                var url = URL.createObjectURL(input.files[0]);
+                preview.innerHTML = '<img class="photo-thumb" src="' + url + '" alt="Storage photo ' + n + ' preview">';
+                var removeBox = document.getElementById('remove_foto_' + n);
+                if (removeBox) removeBox.checked = false;
+            });
+        });
+    })();
+    </script>
 </div>
 
 <div class="card">

@@ -188,8 +188,22 @@ img { max-width: 100%; display: block; }
         padding: var(--space-4) var(--space-5) var(--space-3);
     }
     .topbar nav {
+        display: flex;
         justify-content: flex-end;
+        width: auto;
+        max-width: none;
+        gap: 4px;
     }
+    .topbar nav a {
+        flex-direction: row;
+        gap: 8px;
+        padding: 10px var(--space-4);
+        background: none;
+        font-size: 0.88rem;
+    }
+    .topbar nav a i { font-size: 0.9rem; }
+    .topbar nav a span { font-size: 0.88rem; }
+    .topbar nav a:hover { transform: none; }
 }
 
 /* ---------- Typography ---------- */
