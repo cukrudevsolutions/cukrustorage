@@ -58,16 +58,18 @@ require __DIR__ . '/partials/header.php';
         <tbody>
         <?php foreach ($result['rows'] as $b): ?>
             <tr>
-                <td><a href="booking-detail.php?id=<?= (int) $b['id'] ?>" class="btn-link" style="font-weight:700;"><?= e($b['booking_ref']) ?></a></td>
-                <td>
-                    <a href="owner-view.php?id=<?= (int) $b['id'] ?>" class="btn-link"><?= e($b['nama']) ?></a>
-                    <div class="field-hint" style="margin-top:4px;font-size:0.75rem;color:var(--color-muted);">Admin preview of owner view</div>
+                <td data-label="Booking No."><a href="booking-detail.php?id=<?= (int) $b['id'] ?>" class="btn-link" style="font-weight:700;"><?= e($b['booking_ref']) ?></a></td>
+                <td data-label="Name">
+                    <div>
+                        <a href="owner-view.php?id=<?= (int) $b['id'] ?>" class="btn-link"><?= e($b['nama']) ?></a>
+                        <div class="field-hint" style="margin-top:4px;">Admin preview of owner view</div>
+                    </div>
                 </td>
-                <td><?= e(format_phone($b['no_telefon'])) ?></td>
-                <td><?= (int) $b['bilangan_kotak'] ?></td>
-                <td><?= $b['jenis_servis'] === 'pickup' ? 'Pickup' : 'Drop-off' ?></td>
-                <td><span class="badge badge-<?= e($b['status']) ?>"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span></td>
-                <td><?= $b['harga_total'] !== null ? rm((float) $b['harga_total']) : '-' ?></td>
+                <td data-label="Phone"><?= e(format_phone($b['no_telefon'])) ?></td>
+                <td data-label="Boxes"><?= (int) $b['bilangan_kotak'] ?></td>
+                <td data-label="Service"><?= $b['jenis_servis'] === 'pickup' ? 'Pickup' : 'Drop-off' ?></td>
+                <td data-label="Status"><span class="badge badge-<?= e($b['status']) ?>"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span></td>
+                <td data-label="Total"><?= $b['harga_total'] !== null ? rm((float) $b['harga_total']) : '-' ?></td>
                 <td><a class="btn btn-sm" href="booking-detail.php?id=<?= (int) $b['id'] ?>">View</a></td>
             </tr>
         <?php endforeach; ?>
@@ -76,7 +78,7 @@ require __DIR__ . '/partials/header.php';
     </div>
 
     <?php if ($totalPages > 1): ?>
-        <div style="margin-top:var(--space-4);display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="actions-row" style="margin-top:var(--space-4);">
             <?php for ($p = 1; $p <= $totalPages; $p++): ?>
                 <a class="btn btn-sm <?= $p === $page ? '' : 'btn-secondary' ?>"
                    href="?status=<?= e($status) ?>&q=<?= urlencode($search) ?>&page=<?= $p ?>"><?= $p ?></a>

@@ -78,7 +78,7 @@ foreach ($pickups as $p) {
                 <div style="font-weight:700;font-size:0.88rem;"><?= e($b['booking_ref']) ?></div>
                 <span class="badge badge-<?= e($b['status']) ?>" style="margin-top:4px;"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span>
             </div>
-            <div style="display:flex;gap:var(--space-2);align-items:center;flex-shrink:0;">
+            <div class="actions-row" style="flex-shrink:0;">
                 <a href="<?= e(wa_link($b['no_telefon'])) ?>" target="_blank" rel="noopener"
                    class="btn btn-sm" style="background:#25D366;border:none;padding:10px 14px;">
                     <svg style="width:16px;height:16px;fill:#fff;display:block;" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M22.7 9.3a8.9 8.9 0 0 0-14 10.7L7 25l5.2-1.6a8.9 8.9 0 0 0 12.6-8 8.8 8.8 0 0 0-2.1-6.1zm-6.6 13.6a7.4 7.4 0 0 1-3.8-1l-.3-.2-2.8.9.9-2.7-.2-.3a7.4 7.4 0 1 1 13.8-3.7 7.4 7.4 0 0 1-7.6 7zm4-5.5c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4c-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.1 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.7 2.6 4 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.4-.2z"/></svg>

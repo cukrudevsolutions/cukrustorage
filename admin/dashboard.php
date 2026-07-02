@@ -116,12 +116,12 @@ require __DIR__ . '/partials/header.php';
         <tbody>
         <?php foreach ($pending['rows'] as $b): ?>
             <tr>
-                <td><?= e($b['booking_ref']) ?></td>
-                <td><?= e($b['nama']) ?></td>
-                <td><?= e(format_phone($b['no_telefon'])) ?></td>
-                <td><?= (int) $b['bilangan_kotak'] ?></td>
-                <td><?= $b['jenis_servis'] === 'pickup' ? 'Pickup' : 'Drop-off' ?></td>
-                <td><?= e($b['tarikh_dicadang']) ?></td>
+                <td data-label="Booking No."><?= e($b['booking_ref']) ?></td>
+                <td data-label="Name"><?= e($b['nama']) ?></td>
+                <td data-label="Phone"><?= e(format_phone($b['no_telefon'])) ?></td>
+                <td data-label="Boxes"><?= (int) $b['bilangan_kotak'] ?></td>
+                <td data-label="Service"><?= $b['jenis_servis'] === 'pickup' ? 'Pickup' : 'Drop-off' ?></td>
+                <td data-label="Date"><?= e($b['tarikh_dicadang']) ?></td>
                 <td><a class="btn btn-sm" href="booking-detail.php?id=<?= (int) $b['id'] ?>">Review</a></td>
             </tr>
         <?php endforeach; ?>

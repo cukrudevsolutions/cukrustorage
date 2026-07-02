@@ -197,7 +197,7 @@ require __DIR__ . '/partials/header.php';
             <p class="eyebrow" style="margin:0 0 4px;"><?= e($booking['booking_ref']) ?></p>
             <span class="badge badge-<?= e($booking['status']) ?>" style="font-size:0.82rem;"><?= e($statusLabels[$booking['status']] ?? $booking['status']) ?></span>
         </div>
-        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center;">
+        <div class="actions-row">
             <a href="<?= e($waUrl) ?>" target="_blank" class="btn btn-sm" style="background:#25D366;color:#fff;border:none;"><i class="fa-brands fa-whatsapp"></i> WA</a>
             <?php if ($booking['qr_token']): ?>
                 <a class="btn btn-sm btn-secondary" href="../slip.php?ref=<?= urlencode($booking['booking_ref']) ?>" target="_blank"><i class="fa-solid fa-receipt"></i></a>
@@ -275,15 +275,15 @@ $nextActions = $statusActions[$booking['status']] ?? [];
         </button>
     </form>
     <?php endforeach; ?>
-    <div class="card" style="padding:var(--space-4);margin-top:var(--space-3);background:rgba(239,246,255,0.8);border:1px solid rgba(59,130,246,0.15);">
-        <h3 style="margin:0 0 var(--space-3);font-size:1rem;">Cancel Booking with Reason</h3>
+    <div class="card" style="padding:var(--space-4);margin-top:var(--space-3);background:var(--color-danger-bg);border:1px solid #fecaca;">
+        <h3 style="margin:0 0 var(--space-3);font-size:1rem;color:#991b1b;"><i class="fa-solid fa-ban"></i> Cancel Booking with Reason</h3>
         <form method="post">
             <?= Csrf::field() ?>
             <input type="hidden" name="action" value="update_status">
             <input type="hidden" name="new_status" value="cancelled">
-            <label for="cancel_reason" style="display:block;font-weight:600;margin-bottom:var(--space-2);">Reason for cancellation</label>
-            <textarea id="cancel_reason" name="notes" rows="3" required style="width:100%;padding:14px 16px;border:1px solid var(--color-border);border-radius:calc(var(--radius-sm) + 2px);font-family:inherit;"><?php if ($booking['status'] === 'cancelled') echo e($booking['notes'] ?? ''); ?></textarea>
-            <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);" onclick="return confirm('Cancel this booking?')"><i class="fa-solid fa-ban"></i> Cancel Booking</button>
+            <label for="cancel_reason">Reason for cancellation</label>
+            <textarea id="cancel_reason" name="notes" rows="3" required><?php if ($booking['status'] === 'cancelled') echo e($booking['notes'] ?? ''); ?></textarea>
+            <button type="submit" class="btn btn-danger btn-block" style="margin-top:var(--space-3);" onclick="return confirm('Cancel this booking?')"><i class="fa-solid fa-ban"></i> Cancel Booking</button>
         </form>
     </div>
     <details style="margin-top:var(--space-1);">

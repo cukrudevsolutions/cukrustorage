@@ -74,7 +74,7 @@ require __DIR__ . '/partials/header.php';
 <div class="card">
     <h3><i class="fa-solid fa-magnifying-glass"></i> Manual Search</h3>
     <p class="muted">If the QR code is damaged/missing, search using the Booking No., Phone Number, or Name.</p>
-    <form method="post" style="display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:flex-end;">
+    <form method="post" class="actions-row" style="align-items:flex-end;">
         <?= Csrf::field() ?>
         <div style="flex:1 1 240px;">
             <input type="text" name="query" placeholder="Example: CKS-20260702-AB3F / 012-3456789 / name" required>
@@ -94,10 +94,10 @@ require __DIR__ . '/partials/header.php';
             <tbody>
             <?php foreach ($matches as $b): ?>
                 <tr>
-                    <td><?= e($b['booking_ref']) ?></td>
-                    <td><?= e($b['nama']) ?></td>
-                    <td><?= e(format_phone($b['no_telefon'])) ?></td>
-                    <td><span class="badge badge-<?= e($b['status']) ?>"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span></td>
+                    <td data-label="Booking No."><?= e($b['booking_ref']) ?></td>
+                    <td data-label="Name"><?= e($b['nama']) ?></td>
+                    <td data-label="Phone"><?= e(format_phone($b['no_telefon'])) ?></td>
+                    <td data-label="Status"><span class="badge badge-<?= e($b['status']) ?>"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span></td>
                     <td><a class="btn btn-sm" href="booking-detail.php?id=<?= (int) $b['id'] ?>">View</a></td>
                 </tr>
             <?php endforeach; ?>

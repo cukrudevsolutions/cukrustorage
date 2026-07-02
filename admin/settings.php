@@ -104,62 +104,77 @@ require __DIR__ . '/partials/header.php';
 ?>
 
 <h1>System Settings</h1>
+<p class="muted">Everything below saves together with one "Save Settings" tap.</p>
 
-<form method="post" class="card">
+<form method="post">
     <?= Csrf::field() ?>
     <input type="hidden" name="action" value="save_settings">
 
-    <label class="required" for="site_name">System Name</label>
-    <input type="text" id="site_name" name="site_name" value="<?= e(Settings::get('site_name')) ?>" required>
+    <div class="card">
+        <label class="required" for="site_name">System Name</label>
+        <input type="text" id="site_name" name="site_name" value="<?= e(Settings::get('site_name')) ?>" required>
+    </div>
 
-    <hr class="section-divider"><h3>Contact & Location</h3>
-    <div class="grid-2">
-        <div>
-            <label for="admin_whatsapp">Admin WhatsApp Number</label>
-            <input type="text" id="admin_whatsapp" name="admin_whatsapp" placeholder="60147978792" value="<?= e(Settings::get('admin_whatsapp')) ?>">
-            <p class="field-hint">International format without "+". Used for the "Contact Admin" button on the booking form.</p>
+    <div class="card">
+        <h3><i class="fa-solid fa-location-dot"></i> Contact & Location</h3>
+        <div class="grid-2">
+            <div>
+                <label for="admin_whatsapp">Admin WhatsApp Number</label>
+                <input type="text" id="admin_whatsapp" name="admin_whatsapp" placeholder="60147978792" value="<?= e(Settings::get('admin_whatsapp')) ?>">
+                <p class="field-hint">International format without "+". Used for the "Contact Admin" button on the booking form.</p>
+            </div>
+            <div>
+                <label for="location_maps_url">Drop-off Location Google Maps Link</label>
+                <input type="text" id="location_maps_url" name="location_maps_url" placeholder="https://maps.app.goo.gl/..." value="<?= e(Settings::get('location_maps_url')) ?>">
+            </div>
         </div>
-        <div>
-            <label for="location_maps_url">Drop-off Location Google Maps Link</label>
-            <input type="text" id="location_maps_url" name="location_maps_url" placeholder="https://maps.app.goo.gl/..." value="<?= e(Settings::get('location_maps_url')) ?>">
+    </div>
+
+    <div class="card">
+        <h3><i class="fa-solid fa-tags"></i> Storage Rate Card</h3>
+        <div class="grid-2">
+            <div><label>1 Box (RM)</label><input type="number" step="0.01" min="0" name="rate_box1" value="<?= e(Settings::get('rate_box1')) ?>" required></div>
+            <div><label>2 Boxes (RM)</label><input type="number" step="0.01" min="0" name="rate_box2" value="<?= e(Settings::get('rate_box2')) ?>" required></div>
+            <div><label>3 Boxes (RM)</label><input type="number" step="0.01" min="0" name="rate_box3" value="<?= e(Settings::get('rate_box3')) ?>" required></div>
+            <div><label>Each Box from 4th Onwards (RM)</label><input type="number" step="0.01" min="0" name="rate_extra_box" value="<?= e(Settings::get('rate_extra_box')) ?>" required></div>
         </div>
     </div>
 
-    <hr class="section-divider"><h3>Storage Rate Card</h3>
-    <div class="grid-2">
-        <div><label>1 Box (RM)</label><input type="number" step="0.01" min="0" name="rate_box1" value="<?= e(Settings::get('rate_box1')) ?>" required></div>
-        <div><label>2 Boxes (RM)</label><input type="number" step="0.01" min="0" name="rate_box2" value="<?= e(Settings::get('rate_box2')) ?>" required></div>
-        <div><label>3 Boxes (RM)</label><input type="number" step="0.01" min="0" name="rate_box3" value="<?= e(Settings::get('rate_box3')) ?>" required></div>
-        <div><label>Each Box from 4th Onwards (RM)</label><input type="number" step="0.01" min="0" name="rate_extra_box" value="<?= e(Settings::get('rate_extra_box')) ?>" required></div>
+    <div class="card">
+        <h3><i class="fa-solid fa-clock"></i> Late (Overdue) Charges</h3>
+        <div class="grid-2">
+            <div><label>Rate/Day (RM)</label><input type="number" step="0.01" min="0" name="overdue_rate_per_day" value="<?= e(Settings::get('overdue_rate_per_day')) ?>" required></div>
+            <div><label>Grace Period (days)</label><input type="number" min="0" name="overdue_grace_days" value="<?= e(Settings::get('overdue_grace_days')) ?>" required></div>
+        </div>
     </div>
 
-    <hr class="section-divider"><h3>Late (Overdue) Charges</h3>
-    <div class="grid-2">
-        <div><label>Rate/Day (RM)</label><input type="number" step="0.01" min="0" name="overdue_rate_per_day" value="<?= e(Settings::get('overdue_rate_per_day')) ?>" required></div>
-        <div><label>Grace Period (days)</label><input type="number" min="0" name="overdue_grace_days" value="<?= e(Settings::get('overdue_grace_days')) ?>" required></div>
+    <div class="card">
+        <h3><i class="fa-solid fa-sliders"></i> Other Settings</h3>
+        <div class="grid-2">
+            <div><label>Unclaimed Items (days after Return Period)</label><input type="number" min="0" name="unclaimed_days" value="<?= e(Settings::get('unclaimed_days')) ?>" required></div>
+            <div><label>Pickup Min. Advance Notice (days)</label><input type="number" min="0" name="pickup_min_advance_days" value="<?= e(Settings::get('pickup_min_advance_days')) ?>" required></div>
+        </div>
     </div>
 
-    <hr class="section-divider"><h3>Other Settings</h3>
-    <div class="grid-2">
-        <div><label>Unclaimed Items (days after Return Period)</label><input type="number" min="0" name="unclaimed_days" value="<?= e(Settings::get('unclaimed_days')) ?>" required></div>
-        <div><label>Pickup Min. Advance Notice (days)</label><input type="number" min="0" name="pickup_min_advance_days" value="<?= e(Settings::get('pickup_min_advance_days')) ?>" required></div>
+    <div class="card">
+        <h3><i class="fa-solid fa-calendar-days"></i> Important Dates for the Current Session</h3>
+        <div class="grid-2">
+            <div><label>Period 1 Start</label><input type="date" name="window1_start" value="<?= e(Settings::get('window1_start')) ?>" required></div>
+            <div><label>Period 1 End</label><input type="date" name="window1_end" value="<?= e(Settings::get('window1_end')) ?>" required></div>
+            <div><label>Period 2 Start</label><input type="date" name="window2_start" value="<?= e(Settings::get('window2_start')) ?>" required></div>
+            <div><label>Period 2 End</label><input type="date" name="window2_end" value="<?= e(Settings::get('window2_end')) ?>" required></div>
+            <div><label>Return Period Start</label><input type="date" name="return_window_start" value="<?= e(Settings::get('return_window_start')) ?>" required></div>
+            <div><label>Return Period End</label><input type="date" name="return_window_end" value="<?= e(Settings::get('return_window_end')) ?>" required></div>
+        </div>
     </div>
 
-    <hr class="section-divider"><h3>Important Dates for the Current Session</h3>
-    <div class="grid-2">
-        <div><label>Period 1 Start</label><input type="date" name="window1_start" value="<?= e(Settings::get('window1_start')) ?>" required></div>
-        <div><label>Period 1 End</label><input type="date" name="window1_end" value="<?= e(Settings::get('window1_end')) ?>" required></div>
-        <div><label>Period 2 Start</label><input type="date" name="window2_start" value="<?= e(Settings::get('window2_start')) ?>" required></div>
-        <div><label>Period 2 End</label><input type="date" name="window2_end" value="<?= e(Settings::get('window2_end')) ?>" required></div>
-        <div><label>Return Period Start</label><input type="date" name="return_window_start" value="<?= e(Settings::get('return_window_start')) ?>" required></div>
-        <div><label>Return Period End</label><input type="date" name="return_window_end" value="<?= e(Settings::get('return_window_end')) ?>" required></div>
+    <div class="card">
+        <h3><i class="fa-solid fa-file-lines"></i> Terms & Conditions</h3>
+        <p class="field-hint" style="margin-bottom:var(--space-2);">Use **text** to bold a section heading. A blank line separates paragraphs.</p>
+        <textarea name="terms_and_conditions" rows="16" required><?= e(Settings::get('terms_and_conditions')) ?></textarea>
     </div>
 
-    <hr class="section-divider"><h3>Terms & Conditions</h3>
-    <p class="field-hint" style="margin-bottom:var(--space-2);">Use **text** to bold a section heading. A blank line separates paragraphs.</p>
-    <textarea name="terms_and_conditions" rows="16" required><?= e(Settings::get('terms_and_conditions')) ?></textarea>
-
-    <button type="submit" class="btn btn-block" style="margin-top:var(--space-5);">Save Settings</button>
+    <button type="submit" class="btn btn-block">Save Settings</button>
 </form>
 
 <div class="card">
