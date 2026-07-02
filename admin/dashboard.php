@@ -81,52 +81,19 @@ $scheduleSections = [
     'later'    => ['label' => 'Later This Week', 'class' => 'schedule-later'],
 ];
 
+$autoRefresh = true;
 $pageTitle = 'Dashboard';
 require __DIR__ . '/partials/header.php';
 ?>
 
 <h1>Admin Dashboard</h1>
-<p class="muted">Summary of all current booking statuses.</p>
+<p class="muted">Summary of all current booking statuses. <span class="live-indicator"><span class="live-dot"></span>Auto-refreshes every 45s</span></p>
 
 <?php if ($counts['pending_approval'] > 0): ?>
     <div class="alert alert-info">
         <span><strong><?= $counts['pending_approval'] ?> booking request(s)</strong> are awaiting your approval. <a href="bookings.php?status=pending_approval">View all &rarr;</a></span>
     </div>
 <?php endif; ?>
-
-<div class="card">
-    <h2><i class="fa-solid fa-calendar-check"></i> Upcoming Drop-off / Pickup Schedule</h2>
-    <p class="muted" style="margin-bottom:var(--space-4);">Confirmed and pending bookings due within the next 7 days, so you know what's happening today, tomorrow, and beyond.</p>
-
-    <?php if (empty($scheduleRows)): ?>
-        <div class="empty-state">
-            <div class="icon"><i class="fa-solid fa-calendar-xmark"></i></div>
-            <p>Nothing due in the next 7 days.</p>
-        </div>
-    <?php else: ?>
-        <?php foreach ($scheduleSections as $key => $meta): ?>
-            <?php if (empty($scheduleGroups[$key])) continue; ?>
-            <div class="schedule-group <?= e($meta['class']) ?>">
-                <p class="eyebrow schedule-group-label"><?= e($meta['label']) ?> (<?= count($scheduleGroups[$key]) ?>)</p>
-                <?php foreach ($scheduleGroups[$key] as $b): ?>
-                    <a href="booking-detail.php?id=<?= (int) $b['id'] ?>" class="schedule-item">
-                        <div class="schedule-item-icon">
-                            <i class="fa-solid <?= $b['jenis_servis'] === 'pickup' ? 'fa-truck' : 'fa-store' ?>"></i>
-                        </div>
-                        <div class="schedule-item-body">
-                            <strong><?= e($b['nama']) ?></strong>
-                            <span class="muted"><?= e($b['booking_ref']) ?> &middot; <?= (int) $b['bilangan_kotak'] ?> box(es) &middot; <?= $b['jenis_servis'] === 'pickup' ? 'Team Pickup' : 'Self Drop-off' ?></span>
-                        </div>
-                        <div class="schedule-item-date">
-                            <span><?= date('j M', strtotime($b['tarikh_dicadang'])) ?></span>
-                            <span class="badge badge-<?= e($b['status']) ?>"><?= $b['status'] === 'pending_approval' ? 'Pending' : 'Approved' ?></span>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
 
 <div class="rev-grid">
     <div class="card stat-card">
@@ -210,6 +177,40 @@ require __DIR__ . '/partials/header.php';
         </tbody>
     </table>
     </div>
+    <?php endif; ?>
+</div>
+
+<div class="card">
+    <h2><i class="fa-solid fa-calendar-check"></i> Upcoming Drop-off / Pickup Schedule</h2>
+    <p class="muted" style="margin-bottom:var(--space-4);">Confirmed and pending bookings due within the next 7 days, so you know what's happening today, tomorrow, and beyond.</p>
+
+    <?php if (empty($scheduleRows)): ?>
+        <div class="empty-state">
+            <div class="icon"><i class="fa-solid fa-calendar-xmark"></i></div>
+            <p>Nothing due in the next 7 days.</p>
+        </div>
+    <?php else: ?>
+        <?php foreach ($scheduleSections as $key => $meta): ?>
+            <?php if (empty($scheduleGroups[$key])) continue; ?>
+            <div class="schedule-group <?= e($meta['class']) ?>">
+                <p class="eyebrow schedule-group-label"><?= e($meta['label']) ?> (<?= count($scheduleGroups[$key]) ?>)</p>
+                <?php foreach ($scheduleGroups[$key] as $b): ?>
+                    <a href="booking-detail.php?id=<?= (int) $b['id'] ?>" class="schedule-item">
+                        <div class="schedule-item-icon">
+                            <i class="fa-solid <?= $b['jenis_servis'] === 'pickup' ? 'fa-truck' : 'fa-store' ?>"></i>
+                        </div>
+                        <div class="schedule-item-body">
+                            <strong><?= e($b['nama']) ?></strong>
+                            <span class="muted"><?= e($b['booking_ref']) ?> &middot; <?= (int) $b['bilangan_kotak'] ?> box(es) &middot; <?= $b['jenis_servis'] === 'pickup' ? 'Team Pickup' : 'Self Drop-off' ?></span>
+                        </div>
+                        <div class="schedule-item-date">
+                            <span><?= date('j M', strtotime($b['tarikh_dicadang'])) ?></span>
+                            <span class="badge badge-<?= e($b['status']) ?>"><?= $b['status'] === 'pending_approval' ? 'Pending' : 'Approved' ?></span>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endforeach; ?>
     <?php endif; ?>
 </div>
 

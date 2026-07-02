@@ -46,12 +46,13 @@ function wa_link(string $phone): string
     return 'https://wa.me/' . $digits;
 }
 
+$autoRefresh = true;
 $pageTitle = 'Pickup List';
 require __DIR__ . '/partials/header.php';
 ?>
 
 <h1>Pickup List</h1>
-<p class="muted">All bookings requiring team pickup, sorted by date. Tap the WhatsApp icon to contact the customer directly.</p>
+<p class="muted">All bookings requiring team pickup, sorted by date. Tap the WhatsApp icon to contact the customer directly. <span class="live-indicator"><span class="live-dot"></span>Auto-refreshes every 45s</span></p>
 
 <?php if (empty($pickups)): ?>
     <div class="card empty-state">

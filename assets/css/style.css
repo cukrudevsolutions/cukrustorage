@@ -537,6 +537,28 @@ tbody tr:hover td { background: var(--color-bg); }
     line-height: 1.6;
 }
 
+.live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--color-success);
+    font-weight: 600;
+    margin-left: var(--space-2);
+}
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-success);
+    flex-shrink: 0;
+    animation: live-pulse 1.8s ease-in-out infinite;
+}
+@keyframes live-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+    50% { opacity: 0.5; box-shadow: 0 0 0 4px rgba(22, 163, 74, 0); }
+}
+
 .stat-card { text-align: center; padding: var(--space-4); }
 .stat-card .stat-num { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
 .stat-card .muted { margin-bottom: var(--space-2); }

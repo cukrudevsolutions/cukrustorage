@@ -27,12 +27,13 @@ $statusLabels = [
     'cancelled' => 'Cancelled',
 ];
 
+$autoRefresh = true;
 $pageTitle = 'All Bookings';
 require __DIR__ . '/partials/header.php';
 ?>
 
 <h1>All Bookings</h1>
-<p class="muted">Full list, filterable by status or searchable.</p>
+<p class="muted">Full list, filterable by status or searchable. <span class="live-indicator"><span class="live-dot"></span>Auto-refreshes every 45s</span></p>
 
 <form method="get" class="filter-bar">
     <select name="status" onchange="this.form.submit()">
