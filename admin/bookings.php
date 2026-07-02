@@ -24,6 +24,7 @@ $statusLabels = [
     'ready_for_return' => 'Ready for Return',
     'returned' => 'Returned',
     'overdue' => 'Overdue',
+    'cancelled' => 'Cancelled',
 ];
 
 $pageTitle = 'All Bookings';

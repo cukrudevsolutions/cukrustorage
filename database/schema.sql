@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS bookings (
         'in_storage',
         'ready_for_return',
         'returned',
-        'overdue'
+        'overdue',
+        'cancelled'
     ) NOT NULL DEFAULT 'pending_approval',
     qr_token VARCHAR(64) NULL DEFAULT NULL UNIQUE,
     terms_accepted_at DATETIME NOT NULL,

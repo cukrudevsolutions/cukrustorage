@@ -21,6 +21,7 @@ $stmt = $pdo->query(
              WHEN 'ready_for_return' THEN 4
              WHEN 'returned' THEN 5
              WHEN 'overdue' THEN 6
+             WHEN 'cancelled' THEN 7
          END ASC,
          tarikh_dicadang ASC"
 );
@@ -33,6 +34,7 @@ $statusLabels = [
     'ready_for_return' => 'Ready to Collect',
     'returned'         => 'Collected',
     'overdue'          => 'Overdue',
+    'cancelled'        => 'Cancelled',
 ];
 
 function wa_link(string $phone): string
@@ -48,7 +50,7 @@ $pageTitle = 'Pickup List';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<h1><i class="fa-solid fa-truck"></i> Pickup List</h1>
+<h1>Pickup List</h1>
 <p class="muted">All bookings requiring team pickup, sorted by date. Tap the WhatsApp icon to contact the customer directly.</p>
 
 <?php if (empty($pickups)): ?>

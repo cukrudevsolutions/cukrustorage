@@ -218,10 +218,10 @@ require __DIR__ . '/partials/header.php';
 <?php
 // Status action buttons
 $statusActions = [
-    'approved'        => [['status'=>'in_storage','label'=>'Items Received — In Storage','icon'=>'fa-warehouse','desc'=>'Tap when you have received the customer\'s items.','primary'=>true], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
-    'in_storage'      => [['status'=>'ready_for_return','label'=>'Ready to Collect','icon'=>'fa-bell','desc'=>'Items are ready — notify the customer to come collect.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
-    'ready_for_return'=> [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has collected. This booking is now closed.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
-    'overdue'         => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has finally collected their items.','primary'=>true], ['status'=>'cancelled','label'=>'Cancel Booking','icon'=>'fa-ban','desc'=>'Cancel this booking and record a reason.','primary'=>false]],
+    'approved'        => [['status'=>'in_storage','label'=>'Items Received — In Storage','icon'=>'fa-warehouse','desc'=>'Tap when you have received the customer\'s items.','primary'=>true]],
+    'in_storage'      => [['status'=>'ready_for_return','label'=>'Ready to Collect','icon'=>'fa-bell','desc'=>'Items are ready — notify the customer to come collect.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
+    'ready_for_return'=> [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has collected. This booking is now closed.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
+    'overdue'         => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has finally collected their items.','primary'=>true]],
     'returned'        => [],
 ];
 $nextActions = $statusActions[$booking['status']] ?? [];

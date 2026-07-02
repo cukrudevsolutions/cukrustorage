@@ -25,14 +25,24 @@ $statusLabels = [
     'ready_for_return' => 'Ready to Collect',
     'returned' => 'Collected',
     'overdue' => 'Overdue — Please Collect',
+    'cancelled' => 'Cancelled',
 ];
 
 $returnWindowEnd = new DateTimeImmutable(Settings::get('return_window_end', '2026-10-09'));
 $referenceDate = $booking['returned_at'] ? new DateTimeImmutable($booking['returned_at']) : null;
 $overdue = RateCard::calculateOverdue($returnWindowEnd, $referenceDate);
 
-$isPending = $booking['status'] === 'pending_approval';
 $slipAvailable = in_array($booking['status'], ['in_storage', 'ready_for_return', 'returned', 'overdue'], true) && $booking['qr_token'];
+
+$cancelReason = null;
+if ($booking['status'] === 'cancelled') {
+    foreach (array_reverse(BookingRepository::getLogs($id)) as $log) {
+        if ($log['status_baru'] === 'cancelled') {
+            $cancelReason = $log['notes'];
+            break;
+        }
+    }
+}
 
 $pageTitle = 'Owner Preview — ' . $booking['booking_ref'];
 require __DIR__ . '/partials/header.php';
@@ -61,8 +71,14 @@ require __DIR__ . '/partials/header.php';
     <div class="kv"><span class="k">Collection Period</span><span class="v"><?= e(Settings::get('return_window_start')) ?> – <?= e(Settings::get('return_window_end')) ?></span></div>
     <div class="kv">
         <span class="k">Price</span>
-        <span class="v"><?= $isPending ? '<em style="font-style:italic;color:var(--color-warning);font-weight:600;">Pending admin approval</em>' : rm((float) $booking['harga_total']) ?></span>
+        <span class="v"><?= $booking['harga_total'] !== null ? rm((float) $booking['harga_total']) : '<em style="font-style:italic;color:var(--color-warning);font-weight:600;">Pending admin approval</em>' ?></span>
     </div>
+
+    <?php if ($booking['status'] === 'cancelled'): ?>
+        <div class="alert alert-error" style="margin-top:var(--space-4);margin-bottom:0;">
+            <span>This booking has been cancelled.<?= $cancelReason ? ' Reason: ' . e($cancelReason) : '' ?></span>
+        </div>
+    <?php endif; ?>
 
     <?php if ($booking['status'] === 'overdue' || ($overdue['days'] > 0 && $booking['status'] !== 'returned')): ?>
         <div class="alert alert-error" style="margin-top:var(--space-4);margin-bottom:0;">
