@@ -25,7 +25,11 @@ ALTER TABLE bookings
 --    blanked to status = ''. We recover them using status_logs, which
 --    stores status_baru as free text (VARCHAR) so it was never corrupted.
 --    Only the booking's current status is fixed; it is only touched if
---    'cancelled' is genuinely the most recent status change on record.
+--    'cancelled' is genuinely the most recent *status-changing* entry.
+--    Non-status actions (photo updates, PIN resets) also write a log row
+--    that just repeats the booking's current status as both old/new, so
+--    those rows are excluded here or they'd wrongly mask a real cancel
+--    that happened earlier and got overtaken by a later blank-status row.
 UPDATE bookings b
 JOIN (
     SELECT sl.booking_id, sl.status_baru
@@ -33,6 +37,7 @@ JOIN (
     INNER JOIN (
         SELECT booking_id, MAX(id) AS latest_id
         FROM status_logs
+        WHERE status_baru <> ''
         GROUP BY booking_id
     ) latest ON latest.latest_id = sl.id
 ) last_log ON last_log.booking_id = b.id
