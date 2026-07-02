@@ -19,13 +19,15 @@ foreach ($statuses as $status) {
 }
 
 $totalBookings = array_sum($counts);
+
+// Revenue figures count storage charge only — pickup charge is a logistics
+// pass-through cost, not real revenue, so it's excluded here.
 $totals = [];
-$stmt = $pdo->query("SELECT status, SUM(COALESCE(harga_total, harga_storage + COALESCE(harga_pickup, 0))) AS total_amount FROM bookings GROUP BY status");
+$stmt = $pdo->query("SELECT status, SUM(harga_storage) AS total_amount FROM bookings GROUP BY status");
 while ($row = $stmt->fetch()) {
     $totals[$row['status']] = (float) $row['total_amount'];
 }
 
-$allTotal = array_sum($totals);
 $confirmedTotal = 0.0;
 foreach (['approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'] as $status) {
     $confirmedTotal += $totals[$status] ?? 0.0;
@@ -33,7 +35,6 @@ foreach (['approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'] a
 $pendingTotal = $totals['pending_approval'] ?? 0.0;
 $inStorageTotal = $totals['in_storage'] ?? 0.0;
 $collectedTotal = $totals['returned'] ?? 0.0;
-$allTotal = max($allTotal, $confirmedTotal + $pendingTotal);
 
 $pending = BookingRepository::listFiltered('pending_approval', null, 1, 10);
 
@@ -57,31 +58,27 @@ require __DIR__ . '/partials/header.php';
         <p class="field-hint">All bookings recorded in the system.</p>
     </div>
     <div class="card stat-card">
-        <div class="stat-num"><?= rm($allTotal) ?></div>
-        <div class="muted">All Booking Value</div>
-        <p class="field-hint">Sum of all booking values, including pending and confirmed.</p>
+        <div class="stat-num"><?= rm($pendingTotal) ?></div>
+        <div class="muted">Pending Approval</div>
+        <p class="field-hint">Storage value waiting for admin approval.</p>
     </div>
     <div class="card stat-card">
         <div class="stat-num"><?= rm($confirmedTotal) ?></div>
         <div class="muted">Confirmed Revenue</div>
-        <p class="field-hint">Revenue from approved/in-storage/returned bookings.</p>
+        <p class="field-hint">Storage revenue from approved/in-storage/returned bookings.</p>
     </div>
     <div class="card stat-card">
         <div class="stat-num"><?= rm($inStorageTotal) ?></div>
         <div class="muted">In Storage Value</div>
-        <p class="field-hint">Amount currently in storage, expected once collected.</p>
+        <p class="field-hint">Storage value currently held, expected once collected.</p>
     </div>
     <div class="card stat-card">
         <div class="stat-num"><?= rm($collectedTotal) ?></div>
         <div class="muted">Collected Revenue</div>
-        <p class="field-hint">Already received revenue from returned bookings.</p>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-num"><?= rm($pendingTotal) ?></div>
-        <div class="muted">Pending Approval</div>
-        <p class="field-hint">Value waiting for admin approval.</p>
+        <p class="field-hint">Storage revenue already received from returned bookings.</p>
     </div>
 </div>
+<p class="field-hint" style="margin-top:var(--space-2);">Revenue figures show storage charge only — pickup charges are excluded as they're a logistics cost, not store revenue.</p>
 
 <div class="dashboard-graph card">
     <h2>Booking Status Breakdown</h2>

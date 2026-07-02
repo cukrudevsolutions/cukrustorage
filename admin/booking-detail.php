@@ -133,6 +133,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fields['jarak_anggaran'] = $newJarak ?: null;
         }
 
+        // Booking has already been priced (approved or later) — keep the price in sync with
+        // the edited details, same rate card used for a new booking. Admin can still override
+        // the submitted amount since the form field is editable.
+        if ($booking['harga_total'] !== null) {
+            $newHargaStorage = (float) ($_POST['harga_storage'] ?? $booking['harga_storage']);
+            $newHargaPickup = $booking['harga_pickup'];
+            if ($booking['jenis_servis'] === 'pickup') {
+                $newHargaPickup = (float) ($_POST['harga_pickup'] ?? $booking['harga_pickup']);
+            }
+
+            if ($newHargaStorage >= 0 && ($newHargaPickup === null || $newHargaPickup >= 0)) {
+                $fields['harga_storage'] = $newHargaStorage;
+                if ($booking['jenis_servis'] === 'pickup') {
+                    $fields['harga_pickup'] = $newHargaPickup;
+                }
+                $fields['harga_total'] = $newHargaStorage + ($newHargaPickup ?? 0);
+            }
+        }
+
         if (!empty($fields)) {
             $setClauses = implode(', ', array_map(fn($k) => "$k = :$k", array_keys($fields)));
             $fields['id'] = $id;
@@ -328,8 +347,46 @@ $hasPriceSet = $booking['harga_total'] !== null;
             <label for="edit_distance">Est. Distance</label>
             <input type="text" id="edit_distance" name="jarak_anggaran" value="<?= e($booking['jarak_anggaran'] ?? '') ?>" placeholder="e.g. 5km">
         <?php endif; ?>
+        <?php if ($hasPriceSet): ?>
+            <label for="edit_harga_storage">Storage Charge (RM)</label>
+            <input type="number" step="0.01" min="0" id="edit_harga_storage" name="harga_storage"
+                   value="<?= e((string) $booking['harga_storage']) ?>"
+                   data-rate1="<?= e((string) Settings::getFloat('rate_box1', 30)) ?>"
+                   data-rate2="<?= e((string) Settings::getFloat('rate_box2', 55)) ?>"
+                   data-rate3="<?= e((string) Settings::getFloat('rate_box3', 80)) ?>"
+                   data-rate-extra="<?= e((string) Settings::getFloat('rate_extra_box', 10)) ?>">
+            <p class="field-hint" style="margin-top:4px;">Auto-recalculated from the rate card when boxes change — edit to override.</p>
+            <?php if ($booking['jenis_servis'] === 'pickup'): ?>
+                <label for="edit_harga_pickup">Pickup Charge (RM)</label>
+                <input type="number" step="0.01" min="0" id="edit_harga_pickup" name="harga_pickup" value="<?= e((string) $booking['harga_pickup']) ?>">
+            <?php endif; ?>
+        <?php endif; ?>
         <button type="submit" class="btn btn-secondary btn-block" style="margin-top:var(--space-3);"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
     </form>
+    <?php if ($hasPriceSet): ?>
+    <script>
+    (function() {
+        var boxesInput = document.getElementById('edit_boxes');
+        var storageInput = document.getElementById('edit_harga_storage');
+        if (!boxesInput || !storageInput) return;
+        function calcStorage(boxes) {
+            var r1 = parseFloat(storageInput.dataset.rate1);
+            var r2 = parseFloat(storageInput.dataset.rate2);
+            var r3 = parseFloat(storageInput.dataset.rate3);
+            var rx = parseFloat(storageInput.dataset.rateExtra);
+            if (boxes <= 0) return 0;
+            if (boxes === 1) return r1;
+            if (boxes === 2) return r2;
+            if (boxes === 3) return r3;
+            return r3 + (boxes - 3) * rx;
+        }
+        boxesInput.addEventListener('input', function() {
+            var boxes = parseInt(boxesInput.value, 10) || 0;
+            storageInput.value = calcStorage(boxes).toFixed(2);
+        });
+    })();
+    </script>
+    <?php endif; ?>
     <form method="post" style="margin-top:var(--space-2);" onsubmit="return confirm('Reset this customer\'s PIN to a new random PIN?')">
         <?= Csrf::field() ?>
         <input type="hidden" name="action" value="reset_pin">
