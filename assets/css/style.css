@@ -558,6 +558,63 @@ tbody tr:hover td { background: var(--color-bg); }
 .empty-state { text-align: center; padding: var(--space-8) var(--space-4); color: var(--color-muted); }
 .empty-state .icon { font-size: 2rem; margin-bottom: var(--space-2); }
 
+/* ---------- Upcoming schedule (dashboard) ---------- */
+.schedule-group { margin-bottom: var(--space-5); }
+.schedule-group:last-child { margin-bottom: 0; }
+.schedule-group-label { margin-bottom: var(--space-2); }
+.schedule-overdue .schedule-group-label { color: var(--color-danger); }
+.schedule-today .schedule-group-label { color: var(--color-primary); }
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+    color: var(--color-text);
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.schedule-item:last-child { margin-bottom: 0; }
+.schedule-item:hover { border-color: var(--color-primary); background: var(--color-bg); text-decoration: none; color: var(--color-text); transform: translateY(-1px); }
+.schedule-overdue .schedule-item { border-color: #fecaca; background: var(--color-danger-bg); }
+.schedule-overdue .schedule-item:hover { border-color: var(--color-danger); }
+
+.schedule-item-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+.schedule-overdue .schedule-item-icon { background: #fff; color: var(--color-danger); }
+
+.schedule-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.schedule-item-body strong { font-size: 0.9rem; }
+.schedule-item-body .muted { font-size: 0.78rem; }
+
+.schedule-item-date {
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .schedule-item-body .muted { display: block; }
+}
+
 .status-action-btn {
     width: 100%;
     display: flex;
