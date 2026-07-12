@@ -5,8 +5,10 @@ require_once __DIR__ . '/config/config.php';
 use Cukru\Csrf;
 use Cukru\OwnerAuth;
 
+$redirectTarget = OwnerAuth::sanitizeRedirectTarget($_GET['redirect'] ?? $_POST['redirect'] ?? null);
+
 if (OwnerAuth::isLoggedIn()) {
-    redirect('dashboard.php');
+    redirect($redirectTarget);
 }
 
 $error = null;
@@ -18,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $result = OwnerAuth::attempt($phone, $pin);
     if ($result['success']) {
-        redirect('dashboard.php');
+        redirect($redirectTarget);
     }
     $error = $result['message'];
 }
@@ -52,6 +54,7 @@ require __DIR__ . '/partials/header.php';
 
 <form method="post" class="card">
     <?= Csrf::field() ?>
+    <input type="hidden" name="redirect" value="<?= e($redirectTarget) ?>">
     <label class="required" for="no_telefon">Phone Number</label>
     <input type="tel" id="no_telefon" name="no_telefon" placeholder="012-3456789" data-phone-format inputmode="numeric" maxlength="12" required autofocus autocomplete="tel">
 

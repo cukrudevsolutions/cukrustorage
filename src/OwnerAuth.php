@@ -13,8 +13,18 @@ final class OwnerAuth
     public static function requireLogin(): void
     {
         if (!self::isLoggedIn()) {
-            redirect('login.php');
+            $target = basename($_SERVER['SCRIPT_NAME'] ?? '');
+            redirect('login.php' . ($target !== '' ? '?redirect=' . urlencode($target) : ''));
         }
+    }
+
+    /** Only allow redirecting back to a bare local .php filename - never an external/absolute URL. */
+    public static function sanitizeRedirectTarget(?string $target): string
+    {
+        if ($target !== null && preg_match('/^[a-zA-Z0-9_-]+\.php$/', $target)) {
+            return $target;
+        }
+        return 'dashboard.php';
     }
 
     /** @return int[] */
