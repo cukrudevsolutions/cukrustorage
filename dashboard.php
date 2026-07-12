@@ -6,6 +6,7 @@ use Cukru\OwnerAuth;
 use Cukru\BookingRepository;
 use Cukru\RateCard;
 use Cukru\Settings;
+use Cukru\ReturnRequestRepository;
 
 OwnerAuth::requireLogin();
 BookingRepository::syncOverdueStatuses();
@@ -14,7 +15,8 @@ $statusLabels = [
     'pending_approval' => 'Waiting for Approval',
     'approved' => 'Approved',
     'in_storage' => 'Items in Storage',
-    'ready_for_return' => 'Ready to Collect',
+    'return_scheduled' => 'Return Scheduled',
+    'return_pending_approval' => 'Fast Lane Pending Approval',
     'returned' => 'Collected',
     'overdue' => 'Overdue — Please Collect',
     'cancelled' => 'Cancelled',
@@ -48,7 +50,8 @@ require __DIR__ . '/partials/header.php';
 <?php foreach ($bookings as $booking): ?>
     <?php
     // The slip/QR is only released to the customer once their items are confirmed in storage (not right at approval).
-    $slipAvailable = in_array($booking['status'], ['in_storage', 'ready_for_return', 'returned', 'overdue'], true) && $booking['qr_token'];
+    $slipAvailable = in_array($booking['status'], ['in_storage', 'return_scheduled', 'return_pending_approval', 'returned', 'overdue'], true) && $booking['qr_token'];
+    $returnRequest = $booking['return_request_id'] ? ReturnRequestRepository::findById((int) $booking['return_request_id']) : null;
     $referenceDate = $booking['returned_at'] ? new DateTimeImmutable($booking['returned_at']) : null;
     $overdue = RateCard::calculateOverdue($returnWindowEnd, $referenceDate);
     $cancelReason = null;
@@ -80,6 +83,18 @@ require __DIR__ . '/partials/header.php';
             <span class="k">Price</span>
             <span class="v"><?= $booking['harga_total'] !== null ? rm((float) $booking['harga_total']) : '<em style="font-style:italic;color:var(--color-warning);font-weight:600;">Pending admin approval</em>' ?></span>
         </div>
+        <?php if ($returnRequest): ?>
+        <div class="kv"><span class="k">Return Method</span><span class="v"><?= $returnRequest['method'] === 'team_pickup' ? 'Team Pickup' : 'Self Pickup' ?></span></div>
+        <div class="kv"><span class="k">Return Date</span><span class="v"><?= e(date('j F Y', strtotime($returnRequest['return_date']))) ?><?= $returnRequest['slot_time'] ? ' ' . e(substr((string) $returnRequest['slot_time'], 0, 5)) : '' ?></span></div>
+        <?php endif; ?>
+
+        <?php if ($booking['status'] === 'in_storage'): ?>
+            <a class="btn btn-block" href="return-schedule.php" style="margin-top:var(--space-3);"><i class="fa-solid fa-calendar-check"></i> Schedule Your Return</a>
+        <?php elseif ($booking['status'] === 'return_pending_approval'): ?>
+            <div class="alert alert-info" style="margin-top:var(--space-3);margin-bottom:0;">
+                <span>Your Fast Lane request is awaiting admin approval.</span>
+            </div>
+        <?php endif; ?>
 
         <?php if ($booking['status'] === 'cancelled'): ?>
             <div class="alert alert-error" style="margin-top:var(--space-4);margin-bottom:0;">

@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS bookings (
         'pending_approval',
         'approved',
         'in_storage',
-        'ready_for_return',
+        'return_scheduled',
+        'return_pending_approval',
         'returned',
         'overdue',
         'cancelled'
@@ -56,11 +57,13 @@ CREATE TABLE IF NOT EXISTS bookings (
     foto_storan_1 LONGTEXT NULL DEFAULT NULL,
     foto_storan_2 LONGTEXT NULL DEFAULT NULL,
     foto_storan_3 LONGTEXT NULL DEFAULT NULL,
+    return_request_id INT UNSIGNED NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_no_telefon (no_telefon),
     INDEX idx_status (status),
-    INDEX idx_qr_token (qr_token)
+    INDEX idx_qr_token (qr_token),
+    INDEX idx_return_request_id (return_request_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ---------------------------------------------------------------------
@@ -77,6 +80,47 @@ CREATE TABLE IF NOT EXISTS status_logs (
     CONSTRAINT fk_status_logs_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
     INDEX idx_booking_id (booking_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- Table: return_requests
+-- Satu rekod = satu tempahan tarikh/slot pemulangan owner, terpakai untuk
+-- SEMUA booking (barang) owner tu sekali gus (dipautkan melalui bookings.return_request_id).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS return_requests (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    no_telefon VARCHAR(15) NOT NULL,
+    method ENUM('team_pickup', 'self_pickup') NOT NULL,
+    return_date DATE NOT NULL,
+    slot_time TIME NULL DEFAULT NULL,
+    lane ENUM('normal', 'fast') NOT NULL DEFAULT 'normal',
+    fast_lane_fee DECIMAL(10,2) NULL DEFAULT NULL,
+    status ENUM('confirmed', 'pending_approval', 'rejected', 'cancelled') NOT NULL DEFAULT 'confirmed',
+    admin_notes TEXT NULL DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_no_telefon (no_telefon),
+    INDEX idx_return_date (return_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- Table: return_slot_locks
+-- Satu-satunya mekanisme yang menjamin TIADA dua tempahan normal-lane
+-- boleh clash pada tarikh+masa yang sama, walaupun submit serentak -
+-- PRIMARY KEY (return_date, slot_time) dikuatkuasakan oleh MySQL sendiri,
+-- bukan logik aplikasi (elak race condition "check dulu baru insert").
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS return_slot_locks (
+    return_date DATE NOT NULL,
+    slot_time TIME NOT NULL,
+    return_request_id INT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (return_date, slot_time),
+    UNIQUE KEY uniq_request (return_request_id),
+    CONSTRAINT fk_slot_lock_request FOREIGN KEY (return_request_id) REFERENCES return_requests(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE bookings
+    ADD CONSTRAINT fk_bookings_return_request FOREIGN KEY (return_request_id) REFERENCES return_requests(id) ON DELETE SET NULL;
 
 -- ---------------------------------------------------------------------
 -- Table: login_throttle
@@ -136,6 +180,13 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('window2_end', '2026-07-10'),
 ('return_window_start', '2026-10-03'),
 ('return_window_end', '2026-10-09'),
+
+-- Jadual pickup team untuk return period - admin boleh set, borang owner sync automatik
+('return_team_pickup_enabled', '1'),
+('return_operating_start_time', '09:00'),
+('return_operating_end_time', '17:00'),
+('return_slot_duration_minutes', '60'),
+('return_fast_lane_fee', '10'),
 
 -- Keselamatan admin login
 ('admin_lockout_attempts', '5'),

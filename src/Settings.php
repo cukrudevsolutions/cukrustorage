@@ -34,6 +34,12 @@ final class Settings
         return $value !== null ? (int) $value : $default;
     }
 
+    public static function getBool(string $key, bool $default = false): bool
+    {
+        $value = self::get($key);
+        return $value !== null ? $value === '1' : $default;
+    }
+
     public static function set(string $key, string $value): void
     {
         $stmt = Database::pdo()->prepare(

@@ -12,7 +12,7 @@ $token = trim((string) ($_GET['token'] ?? ''));
 $booking = $ref !== '' ? BookingRepository::findByRef($ref) : null;
 
 // The QR is only released to the customer once the items are confirmed in storage (see slip.php).
-$slipReleasedToCustomer = $booking && in_array($booking['status'], ['in_storage', 'ready_for_return', 'returned', 'overdue'], true);
+$slipReleasedToCustomer = $booking && in_array($booking['status'], ['in_storage', 'return_scheduled', 'return_pending_approval', 'returned', 'overdue'], true);
 
 $allowed = AdminAuth::isLoggedIn()
     || (OwnerAuth::isLoggedIn() && $booking && in_array((int) $booking['id'], OwnerAuth::bookingIds(), true) && $slipReleasedToCustomer)

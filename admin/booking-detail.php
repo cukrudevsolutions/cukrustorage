@@ -9,6 +9,7 @@ use Cukru\RateCard;
 use Cukru\Settings;
 use Cukru\SlipMailer;
 use Cukru\PhotoUpload;
+use Cukru\ReturnRequestRepository;
 
 AdminAuth::requireLogin();
 
@@ -23,7 +24,7 @@ if (!$booking) {
 
 $updatableStatuses = [
     'in_storage' => 'In Storage (IN_STORAGE)',
-    'ready_for_return' => 'Ready for Return (READY_FOR_RETURN)',
+    'return_scheduled' => 'Return Scheduled (RETURN_SCHEDULED)',
     'returned' => 'Returned (RETURNED)',
     'overdue' => 'Overdue',
     'cancelled' => 'Cancelled',
@@ -57,6 +58,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isInStorageOrLater = $booking['status'] !== 'approved';
         $emailSent = $isInStorageOrLater ? SlipMailer::sendStorageSlip($booking) : SlipMailer::sendPriceConfirmation($booking);
         flash_set($emailSent ? 'success' : 'error', $emailSent ? 'Email resent successfully.' : 'Failed to send email. Please check the mail server configuration.');
+        redirect('admin/booking-detail.php?id=' . $id);
+    }
+
+    if ($action === 'approve_return_request' && $booking['return_request_id']) {
+        $result = ReturnRequestRepository::approveFastLane((int) $booking['return_request_id'], AdminAuth::username());
+        flash_set($result['success'] ? 'success' : 'error', $result['success']
+            ? 'Fast Lane request approved and slot confirmed.'
+            : 'That slot was taken in the meantime - please reject this request or ask the customer to pick a different slot.');
+        redirect('admin/booking-detail.php?id=' . $id);
+    }
+
+    if ($action === 'reject_return_request' && $booking['return_request_id']) {
+        $notes = trim($_POST['notes'] ?? '') ?: 'Rejected by admin';
+        ReturnRequestRepository::rejectFastLane((int) $booking['return_request_id'], AdminAuth::username(), $notes);
+        flash_set('success', 'Fast Lane request rejected. The customer can submit a new request.');
         redirect('admin/booking-detail.php?id=' . $id);
     }
 
@@ -173,7 +189,8 @@ $statusLabels = [
     'pending_approval' => 'Pending Approval',
     'approved' => 'Approved',
     'in_storage' => 'In Storage',
-    'ready_for_return' => 'Ready for Return',
+    'return_scheduled' => 'Return Scheduled',
+    'return_pending_approval' => 'Return Pending Approval',
     'returned' => 'Returned',
     'overdue' => 'Overdue',
     'cancelled' => 'Cancelled',
@@ -218,11 +235,14 @@ require __DIR__ . '/partials/header.php';
 <?php
 // Status action buttons
 $statusActions = [
-    'approved'        => [['status'=>'in_storage','label'=>'Items Received — In Storage','icon'=>'fa-warehouse','desc'=>'Tap when you have received the customer\'s items.','primary'=>true]],
-    'in_storage'      => [['status'=>'ready_for_return','label'=>'Ready to Collect','icon'=>'fa-bell','desc'=>'Items are ready — notify the customer to come collect.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
-    'ready_for_return'=> [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has collected. This booking is now closed.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
-    'overdue'         => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has finally collected their items.','primary'=>true]],
-    'returned'        => [],
+    'approved'                => [['status'=>'in_storage','label'=>'Items Received — In Storage','icon'=>'fa-warehouse','desc'=>'Tap when you have received the customer\'s items.','primary'=>true]],
+    // in_storage's next step is now owner-driven (they book their own return date/slot via
+    // return-schedule.php) rather than admin manually marking "ready for return".
+    'in_storage'              => [['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
+    'return_scheduled'        => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has collected. This booking is now closed.','primary'=>true],['status'=>'overdue','label'=>'Mark Overdue','icon'=>'fa-triangle-exclamation','desc'=>'Customer has not collected past the deadline.','primary'=>false]],
+    'return_pending_approval' => [],
+    'overdue'                 => [['status'=>'returned','label'=>'Items Collected ✓','icon'=>'fa-circle-check','desc'=>'Customer has finally collected their items.','primary'=>true]],
+    'returned'                => [],
 ];
 $nextActions = $statusActions[$booking['status']] ?? [];
 ?>
@@ -231,6 +251,29 @@ $nextActions = $statusActions[$booking['status']] ?? [];
     <div class="alert alert-error"><i class="fa-solid fa-triangle-exclamation"></i>
         <span>Overdue by <strong><?= $overdue['days'] ?> day(s)</strong> — outstanding charge: <strong><?= rm($overdue['amount']) ?></strong>.</span>
     </div>
+<?php endif; ?>
+
+<?php $returnRequest = $booking['return_request_id'] ? ReturnRequestRepository::findById((int) $booking['return_request_id']) : null; ?>
+
+<?php if ($booking['status'] === 'return_pending_approval' && $returnRequest): ?>
+<div class="card">
+    <h2><i class="fa-solid fa-hourglass-half"></i> Fast Lane Approval Needed</h2>
+    <p class="muted" style="margin-bottom:var(--space-3);">Customer requested a priority slot outside the normal queue. Confirm the slot is still free before approving.</p>
+    <div class="kv"><span class="k">Requested Date</span><span class="v"><?= e(date('j F Y', strtotime($returnRequest['return_date']))) ?></span></div>
+    <div class="kv"><span class="k">Requested Time</span><span class="v"><?= e(substr((string) $returnRequest['slot_time'], 0, 5)) ?></span></div>
+    <div class="kv"><span class="k">Fast Lane Fee</span><span class="v"><?= rm((float) $returnRequest['fast_lane_fee']) ?></span></div>
+    <form method="post" style="margin-top:var(--space-3);">
+        <?= Csrf::field() ?>
+        <input type="hidden" name="action" value="approve_return_request">
+        <button type="submit" class="btn btn-block" onclick="return confirm('Approve this Fast Lane request and lock the slot?')"><i class="fa-solid fa-check"></i> Approve &amp; Confirm Slot</button>
+    </form>
+    <form method="post" style="margin-top:var(--space-2);">
+        <?= Csrf::field() ?>
+        <input type="hidden" name="action" value="reject_return_request">
+        <input type="hidden" name="notes" value="Rejected by admin from booking detail">
+        <button type="submit" class="btn btn-secondary btn-block" onclick="return confirm('Reject this Fast Lane request?')"><i class="fa-solid fa-xmark"></i> Reject</button>
+    </form>
+</div>
 <?php endif; ?>
 
 <?php if ($booking['status'] === 'pending_approval'): ?>
@@ -328,6 +371,13 @@ $hasPriceSet = $booking['harga_total'] !== null;
         <div class="kv"><span class="k">Pickup</span><span class="v"><?= rm((float) $booking['harga_pickup']) ?></span></div>
         <?php endif; ?>
         <div class="kv"><span class="k"><strong>Total</strong></span><span class="v"><strong><?= rm((float) $booking['harga_total']) ?></strong></span></div>
+        <?php endif; ?>
+        <?php if ($returnRequest): ?>
+        <div class="kv"><span class="k">Return Method</span><span class="v"><?= $returnRequest['method'] === 'team_pickup' ? 'Team Pickup' : 'Self Pickup' ?></span></div>
+        <div class="kv"><span class="k">Return Date</span><span class="v"><?= e(date('j F Y', strtotime($returnRequest['return_date']))) ?><?= $returnRequest['slot_time'] ? ' ' . e(substr((string) $returnRequest['slot_time'], 0, 5)) : '' ?></span></div>
+        <?php if ($returnRequest['lane'] === 'fast'): ?>
+        <div class="kv"><span class="k">Lane</span><span class="v">Fast Lane (<?= rm((float) $returnRequest['fast_lane_fee']) ?>)</span></div>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
 </details>

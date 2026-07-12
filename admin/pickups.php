@@ -18,23 +18,25 @@ $stmt = $pdo->query(
              WHEN 'pending_approval' THEN 1
              WHEN 'approved' THEN 2
              WHEN 'in_storage' THEN 3
-             WHEN 'ready_for_return' THEN 4
-             WHEN 'returned' THEN 5
-             WHEN 'overdue' THEN 6
-             WHEN 'cancelled' THEN 7
+             WHEN 'return_scheduled' THEN 4
+             WHEN 'return_pending_approval' THEN 5
+             WHEN 'returned' THEN 6
+             WHEN 'overdue' THEN 7
+             WHEN 'cancelled' THEN 8
          END ASC,
          tarikh_dicadang ASC"
 );
 $pickups = $stmt->fetchAll();
 
 $statusLabels = [
-    'pending_approval' => 'Waiting for Approval',
-    'approved'         => 'Approved',
-    'in_storage'       => 'Items in Storage',
-    'ready_for_return' => 'Ready to Collect',
-    'returned'         => 'Collected',
-    'overdue'          => 'Overdue',
-    'cancelled'        => 'Cancelled',
+    'pending_approval'        => 'Waiting for Approval',
+    'approved'                => 'Approved',
+    'in_storage'              => 'Items in Storage',
+    'return_scheduled'        => 'Return Scheduled',
+    'return_pending_approval' => 'Fast Lane Pending Approval',
+    'returned'                => 'Collected',
+    'overdue'                 => 'Overdue',
+    'cancelled'               => 'Cancelled',
 ];
 
 function wa_link(string $phone): string

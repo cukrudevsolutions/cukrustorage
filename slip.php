@@ -13,7 +13,7 @@ $booking = $ref !== '' ? BookingRepository::findByRef($ref) : null;
 
 // The slip is only released once the items are confirmed in storage - not right at approval
 // (the admin can still view/print it earlier via their own access, e.g. to label the box).
-$slipReleasedToCustomer = $booking && in_array($booking['status'], ['in_storage', 'ready_for_return', 'returned', 'overdue'], true);
+$slipReleasedToCustomer = $booking && in_array($booking['status'], ['in_storage', 'return_scheduled', 'return_pending_approval', 'returned', 'overdue'], true);
 
 $isAdmin = AdminAuth::isLoggedIn();
 $allowed = $isAdmin

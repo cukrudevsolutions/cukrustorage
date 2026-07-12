@@ -4,9 +4,11 @@ declare(strict_types=1);
 use Cukru\Settings;
 use Cukru\AdminAuth;
 use Cukru\BookingRepository;
+use Cukru\ReturnRequestRepository;
 
 $siteName = Settings::get('site_name', 'CukruStorage');
 $pendingCount = BookingRepository::countPendingApproval();
+$pendingFastLaneCount = ReturnRequestRepository::countPendingFastLane();
 $current = basename($_SERVER['SCRIPT_NAME']);
 
 function nav_active(string $file, string $current): string
@@ -48,6 +50,10 @@ function nav_active(string $file, string $current): string
             </a>
             <a href="bookings.php" class="<?= nav_active('bookings.php', $current) ?>"><span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>Bookings</a>
             <a href="scan.php" class="<?= nav_active('scan.php', $current) ?>"><span class="icon"><i class="fa-solid fa-qrcode"></i></span>Scan</a>
+            <a href="return-schedule.php" class="<?= nav_active('return-schedule.php', $current) ?>">
+                <span class="icon"><i class="fa-solid fa-calendar-check"></i></span>Returns
+                <?php if ($pendingFastLaneCount > 0): ?><span class="notif-badge"><?= $pendingFastLaneCount ?></span><?php endif; ?>
+            </a>
             <a href="pickups.php" class="<?= nav_active('pickups.php', $current) ?>"><span class="icon"><i class="fa-solid fa-truck"></i></span>Pickups</a>
             <a href="settings.php" class="<?= nav_active('settings.php', $current) ?>"><span class="icon"><i class="fa-solid fa-gear"></i></span>Settings</a>
         </nav>

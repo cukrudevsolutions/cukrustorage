@@ -261,7 +261,7 @@ final class BookingRepository
 
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
-            "SELECT id, status FROM bookings WHERE status IN ('approved', 'in_storage', 'ready_for_return')"
+            "SELECT id, status FROM bookings WHERE status IN ('approved', 'in_storage', 'return_scheduled', 'return_pending_approval')"
         );
         $stmt->execute();
         $rows = $stmt->fetchAll();

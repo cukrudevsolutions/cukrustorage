@@ -5,13 +5,14 @@ require_once __DIR__ . '/../config/config.php';
 use Cukru\AdminAuth;
 use Cukru\BookingRepository;
 use Cukru\Database;
+use Cukru\ReturnRequestRepository;
 
 AdminAuth::requireLogin();
 BookingRepository::syncOverdueStatuses();
 
 $pdo = Database::pdo();
 $counts = [];
-$statuses = ['pending_approval', 'approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'];
+$statuses = ['pending_approval', 'approved', 'in_storage', 'return_scheduled', 'return_pending_approval', 'returned', 'overdue'];
 foreach ($statuses as $status) {
     $stmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE status = ?');
     $stmt->execute([$status]);
@@ -35,7 +36,7 @@ while ($row = $stmt->fetch()) {
 }
 
 $confirmedTotal = 0.0;
-foreach (['approved', 'in_storage', 'ready_for_return', 'returned', 'overdue'] as $status) {
+foreach (['approved', 'in_storage', 'return_scheduled', 'return_pending_approval', 'returned', 'overdue'] as $status) {
     $confirmedTotal += $totals[$status] ?? 0.0;
 }
 $pendingTotal = $totals['pending_approval'] ?? 0.0;
@@ -43,6 +44,7 @@ $inStorageTotal = $totals['in_storage'] ?? 0.0;
 $collectedTotal = $totals['returned'] ?? 0.0;
 
 $pending = BookingRepository::listFiltered('pending_approval', null, 1, 10);
+$pendingFastLaneCount = ReturnRequestRepository::countPendingFastLane();
 
 // Upcoming schedule: drop-offs/pickups that haven't happened yet (still
 // pending_approval or approved - once a booking reaches in_storage the
@@ -95,6 +97,12 @@ require __DIR__ . '/partials/header.php';
     </div>
 <?php endif; ?>
 
+<?php if ($pendingFastLaneCount > 0): ?>
+    <div class="alert alert-info">
+        <span><strong><?= $pendingFastLaneCount ?> Fast Lane request(s)</strong> are awaiting your approval. <a href="return-schedule.php?status=pending_approval">View all &rarr;</a></span>
+    </div>
+<?php endif; ?>
+
 <div class="rev-grid">
     <div class="card stat-card">
         <div class="stat-num"><?= $totalBookings ?></div>
@@ -136,7 +144,8 @@ require __DIR__ . '/partials/header.php';
         'pending_approval' => 'Pending Approval',
         'approved' => 'Approved',
         'in_storage' => 'In Storage',
-        'ready_for_return' => 'Ready for Return',
+        'return_scheduled' => 'Return Scheduled',
+        'return_pending_approval' => 'Return Pending Approval',
         'returned' => 'Returned',
         'overdue' => 'Overdue',
     ];

@@ -451,7 +451,8 @@ button::-moz-focus-inner { border: 0; }
 .badge-pending_approval { background: #fef3c7; color: #92400e; }
 .badge-approved { background: #dbeafe; color: #1e40af; }
 .badge-in_storage { background: #e0e7ff; color: #3730a3; }
-.badge-ready_for_return { background: #d1fae5; color: #065f46; }
+.badge-return_scheduled { background: #d1fae5; color: #065f46; }
+.badge-return_pending_approval { background: #fef3c7; color: #92400e; }
 .badge-returned { background: #e5e7eb; color: #374151; }
 .badge-overdue { background: #fee2e2; color: #991b1b; }
 .badge-cancelled { background: #f8d7da; color: #842029; }
@@ -587,7 +588,8 @@ tbody tr:hover td { background: var(--color-bg); }
 .graph-fill.status-pending_approval { background: #f59e0b; }
 .graph-fill.status-approved { background: #2563eb; }
 .graph-fill.status-in_storage { background: #7c3aed; }
-.graph-fill.status-ready_for_return { background: #10b981; }
+.graph-fill.status-return_scheduled { background: #10b981; }
+.graph-fill.status-return_pending_approval { background: #f59e0b; }
 .graph-fill.status-returned { background: #334155; }
 .graph-fill.status-overdue { background: #dc2626; }
 

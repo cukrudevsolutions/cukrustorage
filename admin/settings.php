@@ -9,9 +9,11 @@ use Cukru\Database;
 
 AdminAuth::requireLogin();
 
-$numericKeys = ['rate_box1', 'rate_box2', 'rate_box3', 'rate_extra_box', 'overdue_rate_per_day'];
+$numericKeys = ['rate_box1', 'rate_box2', 'rate_box3', 'rate_extra_box', 'overdue_rate_per_day', 'return_fast_lane_fee'];
 $intKeys = ['overdue_grace_days', 'unclaimed_days', 'pickup_min_advance_days'];
 $dateKeys = ['window1_start', 'window1_end', 'window2_start', 'window2_end', 'return_window_start', 'return_window_end'];
+$timeKeys = ['return_operating_start_time', 'return_operating_end_time'];
+$timeRegex = '/^([01]\d|2[0-3]):[0-5]\d$/';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
@@ -39,6 +41,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $timeValid = true;
+        foreach ($timeKeys as $key) {
+            $val = $_POST[$key] ?? '';
+            if (!preg_match($timeRegex, $val)) {
+                $errors[] = "Invalid time for {$key}.";
+                $timeValid = false;
+            }
+        }
+
+        // Hand-rolled (not part of $intKeys): ctype_digit('0') is true, but a slot
+        // duration of 0 would infinite-loop the slot-grid generator.
+        $slotDurationRaw = (string) ($_POST['return_slot_duration_minutes'] ?? '');
+        $slotDurationValid = ctype_digit($slotDurationRaw) && (int) $slotDurationRaw >= 5;
+        if (!$slotDurationValid) {
+            $errors[] = 'Return pickup slot duration must be a whole number of at least 5 minutes.';
+        }
+
+        if ($timeValid && $slotDurationValid) {
+            $startMinutes = (int) substr($_POST['return_operating_start_time'], 0, 2) * 60 + (int) substr($_POST['return_operating_start_time'], 3, 2);
+            $endMinutes = (int) substr($_POST['return_operating_end_time'], 0, 2) * 60 + (int) substr($_POST['return_operating_end_time'], 3, 2);
+            if ($startMinutes >= $endMinutes) {
+                $errors[] = 'Return pickup operating end time must be after the start time.';
+            } elseif (($endMinutes - $startMinutes) < (int) $slotDurationRaw) {
+                $errors[] = 'Return pickup operating hours must be long enough to fit at least one slot of the configured duration.';
+            }
+        }
+
         $siteName = trim($_POST['site_name'] ?? '');
         if ($siteName === '') {
             $errors[] = 'System name cannot be empty.';
@@ -63,9 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Settings::set('site_name', $siteName);
             Settings::set('admin_whatsapp', $waPhone);
             Settings::set('location_maps_url', $mapsUrl);
-            foreach (array_merge($numericKeys, $intKeys, $dateKeys) as $key) {
+            foreach (array_merge($numericKeys, $intKeys, $dateKeys, $timeKeys) as $key) {
                 Settings::set($key, (string) $_POST[$key]);
             }
+            Settings::set('return_slot_duration_minutes', $slotDurationRaw);
+            // Checkboxes are absent from $_POST entirely when unchecked - presence IS the value.
+            Settings::set('return_team_pickup_enabled', isset($_POST['return_team_pickup_enabled']) ? '1' : '0');
             Settings::set('terms_and_conditions', $terms);
             flash_set('success', 'Settings updated successfully.');
         } else {
@@ -166,6 +198,22 @@ require __DIR__ . '/partials/header.php';
             <div><label>Return Period Start</label><input type="date" name="return_window_start" value="<?= e(Settings::get('return_window_start')) ?>" required></div>
             <div><label>Return Period End</label><input type="date" name="return_window_end" value="<?= e(Settings::get('return_window_end')) ?>" required></div>
         </div>
+    </div>
+
+    <div class="card">
+        <h3><i class="fa-solid fa-truck-fast"></i> Return Pickup Schedule</h3>
+        <p class="field-hint" style="margin-bottom:var(--space-3);">Controls the slot grid owners see when booking their return date. Changes take effect immediately on the booking form.</p>
+        <div class="checkbox-row">
+            <input type="checkbox" id="return_team_pickup_enabled" name="return_team_pickup_enabled" value="1" <?= Settings::getBool('return_team_pickup_enabled') ? 'checked' : '' ?>>
+            <label for="return_team_pickup_enabled" style="margin:0;font-weight:400;">Enable Team Pickup option (Self Pickup is always available)</label>
+        </div>
+        <div class="grid-2">
+            <div><label>Operating Start Time</label><input type="time" name="return_operating_start_time" value="<?= e(Settings::get('return_operating_start_time')) ?>" required></div>
+            <div><label>Operating End Time</label><input type="time" name="return_operating_end_time" value="<?= e(Settings::get('return_operating_end_time')) ?>" required></div>
+            <div><label>Slot Duration (minutes)</label><input type="number" min="5" step="5" name="return_slot_duration_minutes" value="<?= e(Settings::get('return_slot_duration_minutes')) ?>" required></div>
+            <div><label>Fast Lane Fee (RM)</label><input type="number" step="0.01" min="0" name="return_fast_lane_fee" value="<?= e(Settings::get('return_fast_lane_fee')) ?>" required></div>
+        </div>
+        <p class="field-hint">Fast Lane lets an owner request a slot outside the normal queue for this extra fee, subject to admin approval.</p>
     </div>
 
     <div class="card">

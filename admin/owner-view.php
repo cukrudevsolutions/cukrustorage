@@ -22,7 +22,8 @@ $statusLabels = [
     'pending_approval' => 'Waiting for Approval',
     'approved' => 'Approved',
     'in_storage' => 'Items in Storage',
-    'ready_for_return' => 'Ready to Collect',
+    'return_scheduled' => 'Return Scheduled',
+    'return_pending_approval' => 'Fast Lane Pending Approval',
     'returned' => 'Collected',
     'overdue' => 'Overdue — Please Collect',
     'cancelled' => 'Cancelled',
@@ -32,7 +33,7 @@ $returnWindowEnd = new DateTimeImmutable(Settings::get('return_window_end', '202
 $referenceDate = $booking['returned_at'] ? new DateTimeImmutable($booking['returned_at']) : null;
 $overdue = RateCard::calculateOverdue($returnWindowEnd, $referenceDate);
 
-$slipAvailable = in_array($booking['status'], ['in_storage', 'ready_for_return', 'returned', 'overdue'], true) && $booking['qr_token'];
+$slipAvailable = in_array($booking['status'], ['in_storage', 'return_scheduled', 'return_pending_approval', 'returned', 'overdue'], true) && $booking['qr_token'];
 
 $cancelReason = null;
 if ($booking['status'] === 'cancelled') {
