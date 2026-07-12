@@ -37,8 +37,8 @@ function owner_nav_active(string $file, string $current): string
         <?= brand_name_html($siteName) ?>
     </a>
     <nav>
-        <a href="<?= base_path() ?>/booking.php" class="<?= owner_nav_active('booking.php', $currentPage) ?>">
-            <i class="fa-solid fa-box"></i><span>New Booking</span>
+        <a href="<?= base_path() ?>/return-schedule.php" class="<?= owner_nav_active('return-schedule.php', $currentPage) ?>">
+            <i class="fa-solid fa-calendar-check"></i><span>Return</span>
         </a>
         <?php if (OwnerAuth::isLoggedIn()): ?>
             <a href="<?= base_path() ?>/dashboard.php" class="<?= owner_nav_active('dashboard.php', $currentPage) ?>">
