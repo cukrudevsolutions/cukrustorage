@@ -200,6 +200,12 @@ $waPhone = preg_replace('/\D/', '', $booking['no_telefon']);
 if (str_starts_with($waPhone, '0')) $waPhone = '6' . $waPhone;
 $waUrl = 'https://wa.me/' . $waPhone;
 
+if ($booking['qr_token']) {
+    $returnLinkUrl = APP_URL . '/return-schedule.php?ref=' . urlencode($booking['booking_ref']) . '&token=' . urlencode($booking['qr_token']);
+    $waReturnMsg = "Hi {$booking['nama']}, sila tempah tarikh pengambilan/pulangan barang anda ({$booking['booking_ref']}) di sini: {$returnLinkUrl}";
+    $waReturnUrl = $waUrl . '?text=' . rawurlencode($waReturnMsg);
+}
+
 $pageTitle = $booking['booking_ref'];
 require __DIR__ . '/partials/header.php';
 ?>
@@ -216,6 +222,9 @@ require __DIR__ . '/partials/header.php';
         </div>
         <div class="actions-row">
             <a href="<?= e($waUrl) ?>" target="_blank" class="btn btn-sm" style="background:#25D366;color:#fff;border:none;"><i class="fa-brands fa-whatsapp"></i> WA</a>
+            <?php if (isset($waReturnUrl)): ?>
+                <a href="<?= e($waReturnUrl) ?>" target="_blank" class="btn btn-sm" style="background:#25D366;color:#fff;border:none;" title="Send return-scheduling link via WhatsApp"><i class="fa-brands fa-whatsapp"></i> <i class="fa-solid fa-calendar-check"></i></a>
+            <?php endif; ?>
             <?php if ($booking['qr_token']): ?>
                 <a class="btn btn-sm btn-secondary" href="../slip.php?ref=<?= urlencode($booking['booking_ref']) ?>" target="_blank"><i class="fa-solid fa-receipt"></i></a>
                 <form method="post" style="display:inline;">
