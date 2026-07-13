@@ -8,10 +8,38 @@ use Cukru\ReturnRequestRepository;
 use Cukru\Csrf;
 use Cukru\Settings;
 
-OwnerAuth::requireLogin();
+/**
+ * Skip-login access via the same booking_ref + qr_token pattern already used by
+ * slip.php/qr-image.php - the token is a 64-char random secret, stronger than the
+ * PIN it substitutes for. Re-validated on every single request (GET and POST), never
+ * persisted as a session login, since this grants access to ALL of that phone
+ * number's bookings, not just the one the token belongs to.
+ */
+function resolve_token_access(string $ref, string $token): ?string
+{
+    if ($ref === '' || $token === '') {
+        return null;
+    }
+    $booking = BookingRepository::findByRef($ref);
+    if ($booking && $booking['qr_token'] && hash_equals($booking['qr_token'], $token)) {
+        return $booking['no_telefon'];
+    }
+    return null;
+}
+
+$refParam = trim((string) ($_GET['ref'] ?? $_POST['ref'] ?? ''));
+$tokenParam = trim((string) ($_GET['token'] ?? $_POST['token'] ?? ''));
+$tokenPhone = resolve_token_access($refParam, $tokenParam);
+$tokenLinkSuffix = $tokenPhone ? '&ref=' . urlencode($refParam) . '&token=' . urlencode($tokenParam) : '';
+
+if ($tokenPhone) {
+    $bookingIds = array_map(static fn (array $b): int => (int) $b['id'], BookingRepository::findAllByPhone($tokenPhone));
+} else {
+    OwnerAuth::requireLogin();
+    $bookingIds = OwnerAuth::bookingIds();
+}
 BookingRepository::syncOverdueStatuses();
 
-$bookingIds = OwnerAuth::bookingIds();
 $allBookings = array_values(array_filter(array_map(
     static fn (int $id): ?array => BookingRepository::findById($id),
     $bookingIds
@@ -77,24 +105,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         $noTelefon = $eligibleBookings[0]['no_telefon'];
-        $actor = 'owner';
+        $actor = $tokenPhone ? 'owner (link access)' : 'owner';
+        // Token access has no login session/dashboard to return to - land back on this
+        // same page (still carrying ref+token), which then shows the confirmed status.
+        $successRedirect = $tokenPhone ? ('return-schedule.php?ref=' . urlencode($refParam) . '&token=' . urlencode($tokenParam)) : 'dashboard.php';
 
         if ($method === 'self_pickup') {
             ReturnRequestRepository::createSelfPickup($eligibleIds, $noTelefon, $returnDate, $actor);
             flash_set('success', 'Your Self Pickup date has been scheduled.');
-            redirect('dashboard.php');
+            redirect($successRedirect);
         } elseif ($fastLane) {
             ReturnRequestRepository::createTeamPickupFast($eligibleIds, $noTelefon, $returnDate, $slotTime, $config['fee'], $actor);
             flash_set('success', 'Your Fast Lane request has been submitted and is awaiting admin approval.');
-            redirect('dashboard.php');
+            redirect($successRedirect);
         } else {
             $result = ReturnRequestRepository::createTeamPickupNormal($eligibleIds, $noTelefon, $returnDate, $slotTime, $actor);
             if ($result['success']) {
                 flash_set('success', 'Your Team Pickup has been scheduled and confirmed.');
-                redirect('dashboard.php');
+                redirect($successRedirect);
             } else {
                 flash_set('error', 'That slot was just taken by someone else - please pick another time.');
-                redirect('return-schedule.php?method=team_pickup&date=' . urlencode($returnDate));
+                redirect('return-schedule.php?method=team_pickup&date=' . urlencode($returnDate) . $tokenLinkSuffix);
             }
         }
     }
@@ -154,6 +185,10 @@ require __DIR__ . '/partials/header.php';
     <div class="card">
         <h3><i class="fa-solid fa-list-check"></i> 1. Choose Method &amp; Date</h3>
         <form method="get">
+            <?php if ($tokenPhone): ?>
+                <input type="hidden" name="ref" value="<?= e($refParam) ?>">
+                <input type="hidden" name="token" value="<?= e($tokenParam) ?>">
+            <?php endif; ?>
             <div class="grid-2">
                 <label class="radio-card">
                     <input type="radio" name="method" value="self_pickup" <?= $method === 'self_pickup' ? 'checked' : '' ?> onchange="this.form.submit()">
@@ -187,6 +222,10 @@ require __DIR__ . '/partials/header.php';
         <h3><i class="fa-solid fa-check-double"></i> 2. Confirm</h3>
         <form method="post">
             <?= Csrf::field() ?>
+            <?php if ($tokenPhone): ?>
+                <input type="hidden" name="ref" value="<?= e($refParam) ?>">
+                <input type="hidden" name="token" value="<?= e($tokenParam) ?>">
+            <?php endif; ?>
             <input type="hidden" name="method" value="<?= e($method) ?>">
             <input type="hidden" name="return_date" value="<?= e($selectedDate) ?>">
 

@@ -35,6 +35,7 @@ final class SlipMailer
     {
         $siteName = Settings::get('site_name', 'CukruStorage');
         $slipUrl = APP_URL . '/slip.php?ref=' . urlencode($booking['booking_ref']) . '&token=' . urlencode($booking['qr_token']);
+        $returnUrl = APP_URL . '/return-schedule.php?ref=' . urlencode($booking['booking_ref']) . '&token=' . urlencode($booking['qr_token']);
 
         $servisLabel = $booking['jenis_servis'] === 'pickup' ? 'Pickup by Our Team' : 'Self Drop-off by Customer';
 
@@ -47,6 +48,7 @@ final class SlipMailer
             . '<tr><td>Total Payment</td><td><strong>' . rm((float) $booking['harga_total']) . '</strong></td></tr>'
             . '</table>'
             . '<p>Please <a href="' . e($slipUrl) . '">click here to view/print your slip and QR code</a>. Show this QR code to the admin when you collect your items at the end of the storage period.</p>'
+            . '<p>When you\'re ready to get your items back, <a href="' . e($returnUrl) . '">click here to schedule your return date</a> - no login needed.</p>'
             . '<p>You can also check your status anytime via your Dashboard (log in using your phone number &amp; PIN).</p>';
 
         return Mailer::send($booking['email'], "Items Received - {$booking['booking_ref']} - {$siteName}", $body);
