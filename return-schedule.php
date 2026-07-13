@@ -100,6 +100,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Team Pickup is currently not available.';
         } elseif (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $slotTime)) {
             $errors[] = 'Please select a time slot.';
+        } elseif (!$fastLane) {
+            // Every slot only fits one booking. A full slot needs Fast Lane, not a normal
+            // request that's guaranteed to collide with the one already holding it.
+            $slotIsFull = !empty(array_filter(
+                ReturnRequestRepository::getSlotsForDate($returnDate),
+                static fn (array $s): bool => $s['time'] === $slotTime && !$s['available']
+            ));
+            if ($slotIsFull) {
+                $errors[] = 'That slot is already full. Please enable Fast Lane to request it, or pick a different slot.';
+            }
         }
     }
 
@@ -178,7 +188,13 @@ require __DIR__ . '/partials/header.php';
     <div class="card">
         <h3 class="eyebrow" style="margin-bottom:var(--space-3);">This will apply to</h3>
         <?php foreach ($eligibleBookings as $b): ?>
-            <div class="kv"><span class="k"><?= e($b['booking_ref']) ?></span><span class="v"><?= (int) $b['bilangan_kotak'] ?> box(es)</span></div>
+            <div class="kv" style="align-items:flex-start;">
+                <span class="k"><?= e($b['booking_ref']) ?></span>
+                <span class="v" style="text-align:right;">
+                    <?= e($b['nama']) ?><br>
+                    <span class="muted" style="font-size:0.8rem;"><?= e(format_phone($b['no_telefon'])) ?> &middot; <?= (int) $b['bilangan_kotak'] ?> box(es)</span>
+                </span>
+            </div>
         <?php endforeach; ?>
     </div>
 
@@ -237,22 +253,33 @@ require __DIR__ . '/partials/header.php';
                     <div class="alert alert-error"><span>No pickup slots are configured for this date. Please contact admin.</span></div>
                 <?php else: ?>
                     <?php if (!$hasAvailable): ?>
-                        <div class="alert alert-info"><span>All normal slots for this date are taken. You may still request Fast Lane below (subject to admin approval).</span></div>
+                        <div class="alert alert-info"><span>All slots for this date are full (1/1 each). Pick a slot below to request Fast Lane, subject to admin approval.</span></div>
                     <?php endif; ?>
-                    <label>Available Time Slots</label>
+                    <label>Time Slots <span class="field-hint" style="font-weight:400;">(each slot fits 1 booking)</span></label>
                     <div class="grid-2">
                         <?php foreach ($slots as $slot): ?>
-                            <label class="radio-card" style="<?= $slot['available'] ? '' : 'opacity:0.5;' ?>">
-                                <input type="radio" name="slot_time" value="<?= e($slot['time']) ?>" <?= $slot['available'] ? '' : 'disabled' ?> <?= $hasAvailable ? 'required' : '' ?>>
+                            <label class="radio-card" data-available="<?= $slot['available'] ? '1' : '0' ?>" style="<?= $slot['available'] ? '' : 'background:var(--color-bg);' ?>">
+                                <input type="radio" name="slot_time" value="<?= e($slot['time']) ?>" class="slot-radio-input" required>
                                 <span style="font-weight:700;"><?= e($slot['time']) ?></span>
-                                <?php if (!$slot['available']): ?><small style="margin-left:auto;color:var(--color-muted);">Taken</small><?php endif; ?>
+                                <small style="margin-left:auto;color:var(--color-muted);"><?= $slot['available'] ? '0/1' : '1/1 &middot; Full' ?></small>
                             </label>
                         <?php endforeach; ?>
                     </div>
                     <div class="checkbox-row">
-                        <input type="checkbox" id="fast_lane" name="fast_lane" value="1" <?= $hasAvailable ? '' : 'checked' ?>>
-                        <label for="fast_lane" style="margin:0;font-weight:400;">Fast Lane (+<?= rm($config['fee']) ?>) - request priority slot, subject to admin approval</label>
+                        <input type="checkbox" id="fast_lane" name="fast_lane" value="1">
+                        <label for="fast_lane" style="margin:0;font-weight:400;" id="fast_lane_label">Fast Lane (+<?= rm($config['fee']) ?>) - request to squeeze into a full slot, subject to admin approval</label>
                     </div>
+                    <script>
+                    (function() {
+                        document.querySelectorAll('.slot-radio-input').forEach(function(radio) {
+                            radio.addEventListener('change', function() {
+                                var card = radio.closest('.radio-card');
+                                var isAvailable = card.dataset.available === '1';
+                                document.getElementById('fast_lane').checked = !isAvailable;
+                            });
+                        });
+                    })();
+                    </script>
                 <?php endif; ?>
             <?php endif; ?>
 
